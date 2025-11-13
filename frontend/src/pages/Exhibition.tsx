@@ -65,35 +65,42 @@ export default function Exhibition() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="container mx-auto px-4 py-8">
-        {blocks.map((block) => (
-          <div key={block.id} className="mb-16">
-            {block.title && (
-              <h2 className="text-4xl font-bold text-center mb-8 text-gray-800">
-                {block.title}
-              </h2>
-            )}
+        {blocks.map((block) => {
+          // Filter out hidden cards (visible === false)
+          const visibleCards = block.cards.filter((card) => card.visible !== false);
 
-            <Swiper
-              modules={[Navigation, Pagination, Autoplay]}
-              spaceBetween={30}
-              slidesPerView={1}
-              navigation
-              pagination={{ clickable: true }}
-              autoplay={{ delay: 5000, disableOnInteraction: false }}
-              className="rounded-lg shadow-2xl"
-              breakpoints={{
-                640: {
-                  slidesPerView: 1,
-                },
-                768: {
-                  slidesPerView: 2,
-                },
-                1024: {
-                  slidesPerView: 3,
-                },
-              }}
-            >
-              {block.cards.map((card) => (
+          // Skip rendering block if no visible cards
+          if (visibleCards.length === 0) return null;
+
+          return (
+            <div key={block.id} className="mb-16">
+              {block.title && (
+                <h2 className="text-4xl font-bold text-center mb-8 text-gray-800">
+                  {block.title}
+                </h2>
+              )}
+
+              <Swiper
+                modules={[Navigation, Pagination, Autoplay]}
+                spaceBetween={30}
+                slidesPerView={1}
+                navigation
+                pagination={{ clickable: true }}
+                autoplay={{ delay: 5000, disableOnInteraction: false }}
+                className="rounded-lg shadow-2xl"
+                breakpoints={{
+                  640: {
+                    slidesPerView: 1,
+                  },
+                  768: {
+                    slidesPerView: 2,
+                  },
+                  1024: {
+                    slidesPerView: 3,
+                  },
+                }}
+              >
+                {visibleCards.map((card) => (
                 <SwiperSlide key={card.id}>
                   <div className="bg-white rounded-lg overflow-hidden shadow-lg h-full">
                     {/* Card Images */}
@@ -152,10 +159,11 @@ export default function Exhibition() {
                     </div>
                   </div>
                 </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        ))}
+                ))}
+              </Swiper>
+            </div>
+          );
+        })}
       </div>
 
       {/* Navigation to Admin */}

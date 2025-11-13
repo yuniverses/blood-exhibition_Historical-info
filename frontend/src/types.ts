@@ -9,6 +9,7 @@ export interface Card {
   title: string;
   images: Image[];
   description: string;
+  visible?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

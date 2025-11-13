@@ -66,6 +66,16 @@ export default function Admin() {
     }
   };
 
+  const toggleCardVisibility = async (blockId: string, cardId: string, currentVisible: boolean) => {
+    try {
+      await api.updateCard(blockId, cardId, { visible: !currentVisible });
+      await loadBlocks();
+    } catch (err) {
+      console.error('更新可見性失敗:', err);
+      alert('更新可見性失敗');
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">載入中...</div>;
   }
@@ -135,34 +145,58 @@ export default function Admin() {
 
                 {/* Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {block.cards.map((card) => (
-                    <div key={card.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
-                      {card.images.length > 0 && (
-                        <img
-                          src={`${API_BASE}${card.images[0].url}`}
-                          alt={card.title}
-                          className="w-full h-48 object-cover rounded mb-3"
-                        />
-                      )}
-                      <h3 className="font-bold text-lg mb-2">{card.title}</h3>
-                      <p className="text-gray-600 text-sm mb-2 line-clamp-3">{card.description}</p>
-                      <p className="text-xs text-gray-500 mb-3">{card.images.length} 張圖片</p>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setEditingCard({ blockId: block.id, card })}
-                          className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-                        >
-                          編輯
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCard(block.id, card.id)}
-                          className="flex-1 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-                        >
-                          刪除
-                        </button>
+                  {block.cards.map((card) => {
+                    const isVisible = card.visible !== false; // Default to true if undefined
+                    return (
+                      <div
+                        key={card.id}
+                        className={`border rounded-lg p-4 hover:shadow-lg transition-shadow relative ${
+                          !isVisible ? 'opacity-60 bg-gray-50' : ''
+                        }`}
+                      >
+                        {/* Visibility Status Badge */}
+                        <div className="absolute top-2 right-2 z-10">
+                          <button
+                            onClick={() => toggleCardVisibility(block.id, card.id, isVisible)}
+                            className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1 transition-colors ${
+                              isVisible
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                            }`}
+                            title={isVisible ? '點擊隱藏' : '點擊顯示'}
+                          >
+                            <span>{isVisible ? '👁️' : '👁️‍🗨️'}</span>
+                            <span>{isVisible ? '顯示中' : '已隱藏'}</span>
+                          </button>
+                        </div>
+
+                        {card.images.length > 0 && (
+                          <img
+                            src={`${API_BASE}${card.images[0].url}`}
+                            alt={card.title}
+                            className="w-full h-48 object-cover rounded mb-3"
+                          />
+                        )}
+                        <h3 className="font-bold text-lg mb-2">{card.title}</h3>
+                        <p className="text-gray-600 text-sm mb-2 line-clamp-3">{card.description}</p>
+                        <p className="text-xs text-gray-500 mb-3">{card.images.length} 張圖片</p>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => setEditingCard({ blockId: block.id, card })}
+                            className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                          >
+                            編輯
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCard(block.id, card.id)}
+                            className="flex-1 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                          >
+                            刪除
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Show Card Form for this block */}
