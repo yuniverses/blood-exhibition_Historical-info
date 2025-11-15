@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { api, type Block } from '../api';
-import CircularGallery from '../components/CircularGallery';
+import { useEffect, useState } from "react";
+import { api, type Block } from "../api";
+import CircularGallery from "../components/CircularGallery";
 
-const API_BASE = 'http://localhost:3001';
+const API_BASE = "http://localhost:3001";
 
 export default function Exhibition() {
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -20,7 +20,7 @@ export default function Exhibition() {
       setBlocks(data);
       setError(null);
     } catch (err) {
-      setError('載入資料失敗');
+      setError("載入資料失敗");
       console.error(err);
     } finally {
       setLoading(false);
@@ -62,7 +62,7 @@ export default function Exhibition() {
       .filter((card) => card.visible !== false && card.images.length > 0)
       .map((card) => ({
         image: `${API_BASE}${card.images[0].url}`,
-        text: card.title
+        text: card.title,
       }))
   );
 
@@ -82,17 +82,12 @@ export default function Exhibition() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
       {/* Page Title */}
-      <div className="absolute top-8 left-0 right-0 z-10">
-        <h1 className="text-5xl font-bold text-center text-white" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
-          血液基金會歷史展覽
-        </h1>
-      </div>
 
       {/* Circular Gallery */}
       <div className="w-screen h-screen">
         <CircularGallery
           items={galleryItems}
-          bend={3}
+          bend={1}
           textColor="#ffffff"
           borderRadius={0.05}
           font="bold 30px 'Noto Sans TC', sans-serif"
