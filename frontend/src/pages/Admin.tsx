@@ -1,18 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api, type Block, type Card, type Image } from '../api';
+import { IconSearch, IconEdit, IconLogOut, IconAdd, IconUpload, IconX, IconChevronLeft, IconChevronRight } from '../components/Icons';
 
 const API_BASE = 'http://localhost:3001';
 
 export default function Admin() {
+  const navigate = useNavigate();
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [currentBlockId, setCurrentBlockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showBlockForm, setShowBlockForm] = useState(false);
-  const [showCardForm, setShowCardForm] = useState<string | null>(null);
-  const [editingCard, setEditingCard] = useState<{ blockId: string; card: Card } | null>(null);
+  const [showCardForm, setShowCardForm] = useState(false);
+  const [editingCard, setEditingCard] = useState<Card | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
+  const [editingBlockTitle, setEditingBlockTitle] = useState(false);
+  const [blockTitleInput, setBlockTitleInput] = useState('');
 
   useEffect(() => {
     loadBlocks();
   }, []);
+
+  useEffect(() => {
+    if (blocks.length > 0 && !currentBlockId) {
+      setCurrentBlockId(blocks[0].id);
+    }
+  }, [blocks, currentBlockId]);
 
   const loadBlocks = async () => {
     try {
@@ -33,8 +47,9 @@ export default function Admin() {
     const title = formData.get('title') as string;
 
     try {
-      await api.createBlock({ title, cards: [] });
+      const newBlock = await api.createBlock({ title, cards: [] });
       await loadBlocks();
+      setCurrentBlockId(newBlock.id);
       setShowBlockForm(false);
     } catch (err) {
       console.error('建立區塊失敗:', err);
@@ -42,173 +57,412 @@ export default function Admin() {
     }
   };
 
-  const handleDeleteBlock = async (blockId: string) => {
+  const handleDeleteBlock = async () => {
+    if (!currentBlockId) return;
     if (!confirm('確定要刪除此區塊嗎？')) return;
 
     try {
-      await api.deleteBlock(blockId);
+      await api.deleteBlock(currentBlockId);
       await loadBlocks();
+      setCurrentBlockId(null);
     } catch (err) {
       console.error('刪除失敗:', err);
       alert('刪除失敗');
     }
   };
 
-  const handleDeleteCard = async (blockId: string, cardId: string) => {
-    if (!confirm('確定要刪除此卡片嗎？')) return;
-
-    try {
-      await api.deleteCard(blockId, cardId);
-      await loadBlocks();
-    } catch (err) {
-      console.error('刪除失敗:', err);
-      alert('刪除失敗');
+  const handleStartEditBlockTitle = () => {
+    const currentBlock = blocks.find(b => b.id === currentBlockId);
+    if (currentBlock) {
+      setBlockTitleInput(currentBlock.title || '');
+      setEditingBlockTitle(true);
     }
   };
 
-  const toggleCardVisibility = async (blockId: string, cardId: string, currentVisible: boolean) => {
+  const handleUpdateBlockTitle = async () => {
+    if (!currentBlockId || !blockTitleInput.trim()) return;
+
     try {
-      await api.updateCard(blockId, cardId, { visible: !currentVisible });
+      await api.updateBlock(currentBlockId, { title: blockTitleInput.trim() });
       await loadBlocks();
+      setEditingBlockTitle(false);
     } catch (err) {
-      console.error('更新可見性失敗:', err);
-      alert('更新可見性失敗');
+      console.error('更新區塊名稱失敗:', err);
+      alert('更新區塊名稱失敗');
     }
   };
+
+  const handleCancelEditBlockTitle = () => {
+    setEditingBlockTitle(false);
+    setBlockTitleInput('');
+  };
+
+  const handleBatchDelete = async () => {
+    if (!currentBlockId || selectedCards.size === 0) return;
+    if (!confirm(`確定要刪除選中的 ${selectedCards.size} 張卡片嗎？`)) return;
+
+    try {
+      for (const cardId of selectedCards) {
+        await api.deleteCard(currentBlockId, cardId);
+      }
+      await loadBlocks();
+      setSelectedCards(new Set());
+    } catch (err) {
+      console.error('批量刪除失敗:', err);
+      alert('批量刪除失敗');
+    }
+  };
+
+  const handleBatchVisibility = async (visible: boolean) => {
+    if (!currentBlockId || selectedCards.size === 0) return;
+
+    try {
+      for (const cardId of selectedCards) {
+        await api.updateCard(currentBlockId, cardId, { visible });
+      }
+      await loadBlocks();
+      setSelectedCards(new Set());
+    } catch (err) {
+      console.error('批量更新失敗:', err);
+      alert('批量更新失敗');
+    }
+  };
+
+  const toggleCardSelection = (cardId: string) => {
+    const newSelected = new Set(selectedCards);
+    if (newSelected.has(cardId)) {
+      newSelected.delete(cardId);
+    } else {
+      newSelected.add(cardId);
+    }
+    setSelectedCards(newSelected);
+  };
+
+  const toggleAllCards = () => {
+    if (!currentBlock) return;
+    const filteredCards = getFilteredCards();
+    if (selectedCards.size === filteredCards.length) {
+      setSelectedCards(new Set());
+    } else {
+      setSelectedCards(new Set(filteredCards.map((c) => c.id)));
+    }
+  };
+
+  const getFilteredCards = () => {
+    if (!currentBlock) return [];
+    if (!searchQuery) return currentBlock.cards;
+    return currentBlock.cards.filter((card) =>
+      card.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
+
+  const currentBlock = blocks.find((b) => b.id === currentBlockId);
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">載入中...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-800">展覽管理系統</h1>
-            <div className="space-x-4">
-              <a
-                href="/"
-                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 inline-block"
-              >
-                查看展示
-              </a>
+    <div className="bg-white relative min-h-screen">
+      {/* Sidebar */}
+      <div className="fixed bg-[#f2f2f2] h-screen flex flex-col gap-12 items-center px-[40px] py-[50px] w-[294px] left-0 top-0">
+        <p className="font-bold text-[28px] text-black w-full" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+          資料管理系統
+        </p>
+
+        <div className="flex flex-col h-full items-start justify-between w-full">
+          <div className="flex flex-col gap-0">
+            <p className="font-semibold text-[#838383] text-[16px] mb-2" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+              資料呈現區
+            </p>
+            <div className="flex flex-col gap-2 w-[214px]">
+              {blocks.map((block) => (
+                <button
+                  key={block.id}
+                  onClick={() => setCurrentBlockId(block.id)}
+                  className={`flex items-center px-5 py-2.5 w-full text-left rounded transition-colors ${
+                    currentBlockId === block.id ? 'bg-[#c5e4ff]' : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <p className="font-medium text-[20px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    {block.title || '未命名區塊'}
+                  </p>
+                </button>
+              ))}
               <button
                 onClick={() => setShowBlockForm(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="bg-white flex gap-2 items-center px-5 py-2.5 rounded w-full mt-2 hover:bg-gray-50 transition-colors"
               >
-                + 新增區塊
+                <IconAdd size={18} className="text-[#838383]" />
+                <p className="font-medium text-[#838383] text-[18px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  新增區塊
+                </p>
               </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-[30px] w-[214px]">
+            <button
+              onClick={() => navigate('/')}
+              className="bg-white flex items-center justify-center px-5 py-2.5 rounded w-full"
+            >
+              <p className="font-medium text-[18px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                查看展示
+              </p>
+            </button>
+
+            <div className="flex items-center justify-between w-full">
+              <div className="flex gap-3 items-center">
+                <div className="size-9 rounded-full bg-gray-300" />
+                <p className="font-medium text-[18px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  User 01
+                </p>
+              </div>
+              <IconLogOut size={24} className="text-black cursor-pointer" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="container mx-auto px-4 py-8">
-        {blocks.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 mb-4">目前沒有任何區塊</p>
-            <button
-              onClick={() => setShowBlockForm(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
-            >
-              建立第一個區塊
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {blocks.map((block) => (
-              <div key={block.id} className="bg-white rounded-lg shadow-md p-6">
-                {/* Block Header */}
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800">{block.title || '未命名區塊'}</h2>
-                    <p className="text-sm text-gray-500">{block.cards.length} 張卡片</p>
-                  </div>
-                  <div className="space-x-2">
+      {/* Main Content */}
+      <div className="ml-[294px] flex flex-col gap-5 p-12">
+        {currentBlock ? (
+          <>
+            {/* Header */}
+            <div className="flex items-end justify-between">
+              <div className="flex flex-col gap-1.5">
+                <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  資料呈現區
+                </p>
+                {editingBlockTitle ? (
+                  <div className="flex gap-4 items-center">
+                    <input
+                      type="text"
+                      value={blockTitleInput}
+                      onChange={(e) => setBlockTitleInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleUpdateBlockTitle();
+                        } else if (e.key === 'Escape') {
+                          handleCancelEditBlockTitle();
+                        }
+                      }}
+                      className="font-bold text-[28px] text-black border-b-2 border-blue-500 outline-none bg-transparent"
+                      style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                      autoFocus
+                    />
                     <button
-                      onClick={() => setShowCardForm(block.id)}
-                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                      onClick={handleCancelEditBlockTitle}
+                      className="bg-white border border-[#5a5a5a] flex items-center justify-center px-4 py-2 rounded"
                     >
-                      + 新增卡片
+                      <p className="font-medium text-[#838383] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                        取消
+                      </p>
                     </button>
                     <button
-                      onClick={() => handleDeleteBlock(block.id)}
-                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                      onClick={handleUpdateBlockTitle}
+                      className="bg-[#339cfd] flex items-center justify-center px-4 py-2 rounded"
                     >
-                      刪除區塊
+                      <p className="font-medium text-white text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                        儲存
+                      </p>
                     </button>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex gap-4 items-center">
+                    <p className="font-bold text-[28px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                      {currentBlock.title || '未命名區塊'}
+                    </p>
+                    <button onClick={handleStartEditBlockTitle}>
+                      <IconEdit size={24} className="text-black hover:text-gray-600 transition-colors" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={handleDeleteBlock}
+                className="border border-[#ff2f2f] flex items-center px-5 py-2.5 rounded"
+              >
+                <p className="font-medium text-[#ff2f2f] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  刪除區塊
+                </p>
+              </button>
+            </div>
 
-                {/* Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {block.cards.map((card) => {
-                    const isVisible = card.visible !== false; // Default to true if undefined
+            {/* Action Bar */}
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2.5 items-center">
+                <div className="bg-[#eaeaea] flex gap-2.5 items-center p-2.5 rounded-[7px] w-[190px]">
+                  <IconSearch size={20} className="text-gray-600" />
+                  <input
+                    type="text"
+                    placeholder="搜尋..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-transparent outline-none flex-1 text-sm"
+                  />
+                </div>
+                <button
+                  onClick={handleBatchDelete}
+                  disabled={selectedCards.size === 0}
+                  className={`border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded ${
+                    selectedCards.size === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <p className="font-medium text-[#161616] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    刪除卡片
+                  </p>
+                </button>
+                <button
+                  onClick={() => handleBatchVisibility(true)}
+                  disabled={selectedCards.size === 0}
+                  className={`border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded ${
+                    selectedCards.size === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <p className="font-medium text-[#161616] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    顯示
+                  </p>
+                </button>
+                <button
+                  onClick={() => handleBatchVisibility(false)}
+                  disabled={selectedCards.size === 0}
+                  className={`border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded ${
+                    selectedCards.size === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <p className="font-medium text-[#161616] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    隱藏
+                  </p>
+                </button>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingCard(null);
+                  setShowCardForm(true);
+                }}
+                className="bg-[#339cfd] flex gap-2 items-center px-5 py-2.5 rounded"
+              >
+                <IconAdd size={16} className="text-white" />
+                <p className="font-medium text-[14px] text-white" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  新增卡片
+                </p>
+              </button>
+            </div>
+
+            {/* Data Table */}
+            <div className="bg-[#f7f7f7] flex flex-col gap-4 p-5 rounded-[10px]">
+              {/* Table Header */}
+              <div className="flex items-center px-3.5">
+                <div className="flex items-center justify-center w-[30px]">
+                  <input
+                    type="checkbox"
+                    checked={selectedCards.size === getFilteredCards().length && getFilteredCards().length > 0}
+                    onChange={toggleAllCards}
+                    className="size-5 cursor-pointer"
+                  />
+                </div>
+                <div className="flex items-center justify-center flex-1">
+                  <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    標題
+                  </p>
+                </div>
+                <div className="flex items-center justify-center w-[134px]">
+                  <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    建立者
+                  </p>
+                </div>
+                <div className="flex items-center justify-center w-[204px]">
+                  <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    建立日期
+                  </p>
+                </div>
+                <div className="flex items-center justify-center w-[204px]">
+                  <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    最後更新
+                  </p>
+                </div>
+                <div className="flex items-center justify-center w-[112px]">
+                  <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    狀態
+                  </p>
+                </div>
+              </div>
+
+              {/* Table Rows */}
+              <div className="flex flex-col gap-2">
+                {getFilteredCards().length === 0 ? (
+                  <div className="bg-white flex items-center justify-center px-3.5 py-5 rounded-[5px]">
+                    <p className="text-gray-500">沒有卡片資料</p>
+                  </div>
+                ) : (
+                  getFilteredCards().map((card) => {
+                    const isVisible = card.visible !== false;
                     return (
                       <div
                         key={card.id}
-                        className={`border rounded-lg p-4 hover:shadow-lg transition-shadow relative ${
-                          !isVisible ? 'opacity-60 bg-gray-50' : ''
-                        }`}
+                        className="bg-white flex items-center px-3.5 py-5 rounded-[5px] cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => {
+                          setEditingCard(card);
+                          setShowCardForm(true);
+                        }}
                       >
-                        {/* Visibility Status Badge */}
-                        <div className="absolute top-2 right-2 z-10">
-                          <button
-                            onClick={() => toggleCardVisibility(block.id, card.id, isVisible)}
-                            className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1 transition-colors ${
-                              isVisible
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                            }`}
-                            title={isVisible ? '點擊隱藏' : '點擊顯示'}
-                          >
-                            <span>{isVisible ? '👁️' : '👁️‍🗨️'}</span>
-                            <span>{isVisible ? '顯示中' : '已隱藏'}</span>
-                          </button>
-                        </div>
-
-                        {card.images.length > 0 && (
-                          <img
-                            src={`${API_BASE}${card.images[0].url}`}
-                            alt={card.title}
-                            className="w-full h-48 object-cover rounded mb-3"
+                        <div
+                          className="flex items-center justify-center w-[30px]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCards.has(card.id)}
+                            onChange={() => toggleCardSelection(card.id)}
+                            className="size-5 cursor-pointer"
                           />
-                        )}
-                        <h3 className="font-bold text-lg mb-2">{card.title}</h3>
-                        <p className="text-gray-600 text-sm mb-2 line-clamp-3">{card.description}</p>
-                        <p className="text-xs text-gray-500 mb-3">{card.images.length} 張圖片</p>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => setEditingCard({ blockId: block.id, card })}
-                            className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                        </div>
+                        <div className="flex items-center justify-center flex-1">
+                          <p className="font-semibold text-[18px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                            {card.title}
+                          </p>
+                        </div>
+                        <div className="flex gap-2.5 items-center justify-center w-[134px]">
+                          <div className="size-7 rounded-full bg-gray-300" />
+                          <p className="font-semibold text-[16px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                            User 01
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-center w-[204px]">
+                          <p className="font-semibold text-[16px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                            {card.createdAt ? new Date(card.createdAt).toLocaleDateString('zh-TW') : '2022.6.10'}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-center w-[204px]">
+                          <p className="font-semibold text-[16px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                            {card.updatedAt ? new Date(card.updatedAt).toLocaleDateString('zh-TW') : '2022.6.10'}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-center w-[112px]">
+                          <p
+                            className={`font-semibold text-[16px] ${isVisible ? 'text-black' : 'text-[#838383]'}`}
+                            style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
                           >
-                            編輯
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCard(block.id, card.id)}
-                            className="flex-1 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-                          >
-                            刪除
-                          </button>
+                            {isVisible ? '顯示' : '隱藏'}
+                          </p>
                         </div>
                       </div>
                     );
-                  })}
-                </div>
-
-                {/* Show Card Form for this block */}
-                {showCardForm === block.id && (
-                  <CardForm
-                    blockId={block.id}
-                    onClose={() => setShowCardForm(null)}
-                    onSuccess={loadBlocks}
-                  />
+                  })
                 )}
               </div>
-            ))}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)]">
+            <p className="text-gray-600 mb-4 text-lg">目前沒有任何區塊</p>
+            <button
+              onClick={() => setShowBlockForm(true)}
+              className="bg-[#339cfd] text-white px-6 py-3 rounded hover:bg-blue-600"
+            >
+              建立第一個區塊
+            </button>
           </div>
         )}
       </div>
@@ -217,21 +471,27 @@ export default function Admin() {
       {showBlockForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">新增區塊</h3>
+            <h3 className="text-xl font-bold mb-4" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+              新增區塊
+            </h3>
             <form onSubmit={handleCreateBlock}>
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">區塊標題</label>
+                <label className="block text-sm font-medium mb-2" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  區塊標題
+                </label>
                 <input
                   type="text"
                   name="title"
                   className="w-full border rounded px-3 py-2"
                   required
+                  style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
                 />
               </div>
               <div className="flex space-x-3">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                  className="flex-1 bg-[#339cfd] text-white py-2 rounded hover:bg-blue-600"
+                  style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
                 >
                   建立
                 </button>
@@ -239,6 +499,7 @@ export default function Admin() {
                   type="button"
                   onClick={() => setShowBlockForm(false)}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+                  style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
                 >
                   取消
                 </button>
@@ -248,13 +509,20 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Edit Card Modal */}
-      {editingCard && (
+      {/* Card Form Modal */}
+      {showCardForm && currentBlockId && (
         <CardForm
-          blockId={editingCard.blockId}
-          existingCard={editingCard.card}
-          onClose={() => setEditingCard(null)}
-          onSuccess={loadBlocks}
+          blockId={currentBlockId}
+          existingCard={editingCard || undefined}
+          onClose={() => {
+            setShowCardForm(false);
+            setEditingCard(null);
+          }}
+          onSuccess={() => {
+            loadBlocks();
+            setShowCardForm(false);
+            setEditingCard(null);
+          }}
         />
       )}
     </div>
@@ -270,10 +538,31 @@ interface CardFormProps {
 }
 
 function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) {
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState(existingCard?.title || '');
   const [description, setDescription] = useState(existingCard?.description || '');
   const [images, setImages] = useState<Image[]>(existingCard?.images || []);
+  const [visible, setVisible] = useState(existingCard?.visible !== false);
   const [uploading, setUploading] = useState(false);
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [currentBlock, setCurrentBlock] = useState<Block | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    loadBlocks();
+  }, []);
+
+  const loadBlocks = async () => {
+    try {
+      const data = await api.getBlocks();
+      setBlocks(data);
+      const block = data.find((b) => b.id === blockId);
+      setCurrentBlock(block || null);
+    } catch (err) {
+      console.error('載入失敗:', err);
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -292,21 +581,36 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
+    if (!title.trim()) {
+      alert('請輸入標題');
+      return;
+    }
 
     try {
-      const cardData = { title, description, images };
+      const cardData = { title, description, images, visible };
       if (existingCard) {
         await api.updateCard(blockId, existingCard.id, cardData);
       } else {
         await api.createCard(blockId, cardData);
       }
       onSuccess();
-      onClose();
     } catch (err) {
       console.error('儲存失敗:', err);
       alert('儲存失敗');
+    }
+  };
+
+  const handleDeleteCard = async () => {
+    if (!existingCard) return;
+    if (!confirm('確定要刪除此卡片嗎？')) return;
+
+    try {
+      await api.deleteCard(blockId, existingCard.id);
+      onSuccess();
+    } catch (err) {
+      console.error('刪除失敗:', err);
+      alert('刪除失敗');
     }
   };
 
@@ -320,97 +624,327 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
     setImages(newImages);
   };
 
+  const nextImage = () => {
+    if (images.length > 0) {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (images.length > 0) {
+      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full my-8">
-        <h3 className="text-xl font-bold mb-4">
-          {existingCard ? '編輯卡片' : '新增卡片'}
-        </h3>
+    <div className="bg-white fixed inset-0 z-50 overflow-y-auto">
+      {/* Sidebar */}
+      <div className="fixed bg-[#f2f2f2] h-screen flex flex-col gap-12 items-center px-[40px] py-[50px] w-[294px] left-0 top-0">
+        <p className="font-bold text-[28px] text-black w-full" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+          資料管理系統
+        </p>
 
-        <form onSubmit={handleSubmit}>
-          {/* Title */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">標題 *</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-
-          {/* Description */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">說明文字</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full border rounded px-3 py-2 h-32"
-              placeholder="輸入卡片說明..."
-            />
-          </div>
-
-          {/* Images */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">圖片</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="w-full border rounded px-3 py-2 mb-3"
-              disabled={uploading}
-            />
-            {uploading && <p className="text-sm text-gray-600">上傳中...</p>}
-
-            {/* Image Preview */}
-            <div className="space-y-3">
-              {images.map((image, idx) => (
-                <div key={idx} className="border rounded p-3 flex items-start space-x-3">
-                  <img
-                    src={`${API_BASE}${image.url}`}
-                    alt={`預覽 ${idx + 1}`}
-                    className="w-24 h-24 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      value={image.caption || ''}
-                      onChange={(e) => updateImageCaption(idx, e.target.value)}
-                      placeholder="圖片說明（可選）"
-                      className="w-full border rounded px-2 py-1 text-sm mb-2"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(idx)}
-                      className="text-red-600 text-sm hover:underline"
-                    >
-                      移除
-                    </button>
-                  </div>
+        <div className="flex flex-col h-full items-start justify-between w-full">
+          <div className="flex flex-col gap-0">
+            <p className="font-semibold text-[#838383] text-[16px] mb-2" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+              資料呈現區
+            </p>
+            <div className="flex flex-col gap-2 w-[214px]">
+              {blocks.map((block) => (
+                <div
+                  key={block.id}
+                  className={`flex items-center px-5 py-2.5 w-full ${
+                    blockId === block.id ? 'bg-[#c5e4ff]' : ''
+                  }`}
+                >
+                  <p className="font-medium text-[20px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    {block.title || '未命名區塊'}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex space-x-3">
+          <div className="flex flex-col gap-[30px] w-[214px]">
             <button
-              type="submit"
-              className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+              onClick={() => navigate('/')}
+              className="bg-white flex items-center justify-center px-5 py-2.5 rounded w-full"
             >
-              儲存
+              <p className="font-medium text-[18px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                查看展示
+              </p>
+            </button>
+
+            <div className="flex items-center justify-between w-full">
+              <div className="flex gap-3 items-center">
+                <div className="size-9 rounded-full bg-gray-300" />
+                <p className="font-medium text-[18px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  User 01
+                </p>
+              </div>
+              <IconLogOut size={24} className="text-black cursor-pointer" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="ml-[294px] flex flex-col gap-5 px-[93px] py-12">
+        {/* Header */}
+        <div className="flex items-end justify-between">
+          <div className="flex flex-col gap-1.5">
+            <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+              資料呈現區
+            </p>
+            <p className="font-bold text-[28px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+              {currentBlock?.title || '未命名區塊'} / {existingCard ? existingCard.title : '新增卡片'}
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="bg-white border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded"
+            >
+              <p className="font-medium text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                取消
+              </p>
             </button>
             <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+              onClick={handleSave}
+              className="bg-[#339cfd] flex items-center px-5 py-2.5 rounded"
             >
-              取消
+              <p className="font-medium text-[16px] text-white" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                儲存
+              </p>
             </button>
           </div>
-        </form>
+        </div>
+
+        {/* Content */}
+        <div className="flex gap-5">
+          {/* Left Panel */}
+          <div className="flex flex-col gap-5 w-[601px]">
+            {/* Image Upload */}
+            <div className="flex flex-col gap-3">
+              <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                圖片
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={uploading}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="bg-[#f7f7f7] flex flex-col gap-3 h-[137px] items-center justify-center rounded-[10px] hover:bg-gray-200 transition-colors"
+              >
+                <IconUpload size={48} className="text-[#838383]" />
+                <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  {uploading ? '上傳中...' : '點擊上傳圖片'}
+                </p>
+              </button>
+            </div>
+
+            {/* Image List */}
+            {images.map((image, idx) => (
+              <div key={idx} className="border border-[#d9d9d9] flex gap-6 p-3.5 rounded-[10px]">
+                <div className="relative bg-[#d9d9d9] h-[100px] w-[160px] rounded-[10px] flex items-center justify-center overflow-hidden">
+                  {image.url ? (
+                    <img
+                      src={`${API_BASE}${image.url}`}
+                      alt={`圖片 ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                      圖片 {idx + 1}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => removeImage(idx)}
+                    className="absolute right-2 top-2 bg-white rounded-full p-1 hover:bg-red-100 transition-colors"
+                  >
+                    <IconX size={16} className="text-red-500" />
+                  </button>
+                </div>
+                <div className="flex-1 flex flex-col gap-2.5">
+                  <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    圖片說明文字
+                  </p>
+                  <input
+                    type="text"
+                    value={image.caption || ''}
+                    onChange={(e) => updateImageCaption(idx, e.target.value)}
+                    placeholder="請輸入（可選）"
+                    className="bg-white border border-[#d9d9d9] px-2.5 py-2.5 rounded-[5px] text-[14px]"
+                    style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                  />
+                </div>
+              </div>
+            ))}
+
+            {/* Title */}
+            <div className="flex flex-col gap-3">
+              <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                標題
+              </p>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="bg-white border border-[#d9d9d9] px-3.5 py-3.5 rounded-[5px] text-[18px] font-bold"
+                style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                placeholder="請輸入標題"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="flex flex-col gap-3">
+              <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                說明文字
+              </p>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="bg-white border border-[#d9d9d9] h-[129px] p-4 rounded-[10px] text-[14px]"
+                style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                placeholder="請輸入說明文字"
+              />
+            </div>
+          </div>
+
+          {/* Right Panel */}
+          <div className="flex flex-col gap-5 w-[356px]">
+            {/* Preview */}
+            <div className="flex flex-col gap-3">
+              <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                預覽
+              </p>
+              <div className="bg-white border-[6px] border-[#f7f7f7] p-3.5 rounded-[5px]">
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-2">
+                    {images.length > 0 ? (
+                      <div className="relative">
+                        <img
+                          src={`${API_BASE}${images[currentImageIndex].url}`}
+                          alt="預覽"
+                          className="w-full h-[202px] object-cover bg-[#d9d9d9]"
+                        />
+                        {images.length > 1 && (
+                          <>
+                            {/* Left Arrow */}
+                            <button
+                              onClick={prevImage}
+                              className="absolute left-2.5 top-1/2 -translate-y-1/2 bg-[#bbbbbb] hover:bg-[#999999] rounded-full p-1 transition-colors"
+                              aria-label="上一張"
+                            >
+                              <IconChevronLeft size={16} className="text-white" />
+                            </button>
+
+                            {/* Right Arrow */}
+                            <button
+                              onClick={nextImage}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-[#bbbbbb] hover:bg-[#999999] rounded-full p-1 transition-colors"
+                              aria-label="下一張"
+                            >
+                              <IconChevronRight size={16} className="text-white" />
+                            </button>
+
+                            {/* Dots Indicator */}
+                            <div className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 flex gap-1">
+                              {images.map((_, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => setCurrentImageIndex(i)}
+                                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                                    i === currentImageIndex ? 'bg-white' : 'bg-gray-400'
+                                  }`}
+                                  aria-label={`切換到第 ${i + 1} 張`}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-full h-[202px] bg-[#d9d9d9]" />
+                    )}
+                    {images[currentImageIndex]?.caption && (
+                      <p className="font-medium text-[#292c33] text-[10px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                        {images[currentImageIndex].caption}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <p className="font-bold text-[#292c33] text-[19px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                      {title || '標題'}
+                    </p>
+                    <p className="font-medium text-[#292c33] text-[12px] line-clamp-3" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                      {description || '說明文字'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Setting */}
+            <div className="flex flex-col gap-3">
+              <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                狀態設定
+              </p>
+              <div className="flex gap-2.5">
+                <button
+                  onClick={() => setVisible(true)}
+                  className={`flex items-center px-5 py-2.5 rounded ${
+                    visible ? 'bg-[#339cfd]' : 'border border-[#5a5a5a] opacity-50'
+                  }`}
+                >
+                  <p
+                    className={`font-medium text-[14px] ${visible ? 'text-white' : 'text-[#161616]'}`}
+                    style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                  >
+                    顯示
+                  </p>
+                </button>
+                <button
+                  onClick={() => setVisible(false)}
+                  className={`flex items-center px-5 py-2.5 rounded ${
+                    !visible ? 'bg-[#339cfd]' : 'border border-[#5a5a5a] opacity-50'
+                  }`}
+                >
+                  <p
+                    className={`font-medium text-[14px] ${!visible ? 'text-white' : 'text-[#161616]'}`}
+                    style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                  >
+                    隱藏
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            {/* Card Management */}
+            {existingCard && (
+              <div className="flex flex-col gap-3">
+                <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  卡片管理
+                </p>
+                <button
+                  onClick={handleDeleteCard}
+                  className="border border-[#ff2f2f] flex items-center px-5 py-2.5 rounded w-fit"
+                >
+                  <p className="font-medium text-[#ff2f2f] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                    刪除卡片
+                  </p>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
