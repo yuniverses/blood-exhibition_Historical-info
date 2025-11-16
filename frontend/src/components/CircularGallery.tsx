@@ -374,7 +374,7 @@ class Media {
 }
 
 interface AppConfig {
-  items?: { image: string; text: string }[];
+  items?: GalleryCard[];
   bend?: number;
   textColor?: string;
   borderRadius?: number;
@@ -400,7 +400,7 @@ class App {
   scene!: Transform;
   planeGeometry!: Plane;
   medias: Media[] = [];
-  mediasImages: { image: string; text: string }[] = [];
+  mediasImages: GalleryCard[] = [];
   screen!: { width: number; height: number };
   viewport!: { width: number; height: number };
   raf: number = 0;
@@ -470,60 +470,60 @@ class App {
   }
 
   createMedias(
-    items: { image: string; text: string }[] | undefined,
+    items: GalleryCard[] | undefined,
     bend: number = 1,
     textColor: string,
     borderRadius: number,
     font: string
   ) {
-    const defaultItems = [
+    const defaultItems: GalleryCard[] = [
       {
         image: `https://picsum.photos/seed/1/800/600?grayscale`,
-        text: 'Bridge'
+        title: 'Bridge'
       },
       {
         image: `https://picsum.photos/seed/2/800/600?grayscale`,
-        text: 'Desk Setup'
+        title: 'Desk Setup'
       },
       {
         image: `https://picsum.photos/seed/3/800/600?grayscale`,
-        text: 'Waterfall'
+        title: 'Waterfall'
       },
       {
         image: `https://picsum.photos/seed/4/800/600?grayscale`,
-        text: 'Strawberries'
+        title: 'Strawberries'
       },
       {
         image: `https://picsum.photos/seed/5/800/600?grayscale`,
-        text: 'Deep Diving'
+        title: 'Deep Diving'
       },
       {
         image: `https://picsum.photos/seed/16/800/600?grayscale`,
-        text: 'Train Track'
+        title: 'Train Track'
       },
       {
         image: `https://picsum.photos/seed/17/800/600?grayscale`,
-        text: 'Santorini'
+        title: 'Santorini'
       },
       {
         image: `https://picsum.photos/seed/8/800/600?grayscale`,
-        text: 'Blurry Lights'
+        title: 'Blurry Lights'
       },
       {
         image: `https://picsum.photos/seed/9/800/600?grayscale`,
-        text: 'New York'
+        title: 'New York'
       },
       {
         image: `https://picsum.photos/seed/10/800/600?grayscale`,
-        text: 'Good Boy'
+        title: 'Good Boy'
       },
       {
         image: `https://picsum.photos/seed/21/800/600?grayscale`,
-        text: 'Coastline'
+        title: 'Coastline'
       },
       {
         image: `https://picsum.photos/seed/12/800/600?grayscale`,
-        text: 'Palm Trees'
+        title: 'Palm Trees'
       }
     ];
     const galleryItems = items && items.length ? items : defaultItems;
@@ -538,7 +538,7 @@ class App {
         renderer: this.renderer,
         scene: this.scene,
         screen: this.screen,
-        text: data.text,
+        text: data.title,
         viewport: this.viewport,
         bend,
         textColor,
@@ -644,8 +644,16 @@ class App {
   }
 }
 
+export interface GalleryCard {
+  image: string; // 主圖片（向後兼容）
+  images?: { url: string; caption?: string }[]; // 所有圖片
+  title: string;
+  description?: string;
+  imageCaption?: string;
+}
+
 interface CircularGalleryProps {
-  items?: { image: string; text: string }[];
+  items?: GalleryCard[];
   bend?: number;
   textColor?: string;
   borderRadius?: number;

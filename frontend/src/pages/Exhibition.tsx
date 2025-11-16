@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { api, type Block } from "../api";
-import CircularGallery from "../components/CircularGallery";
+import EnhancedGallery from "../components/EnhancedGallery";
+import BlockNavigator from "../components/BlockNavigator";
+import type { GalleryCard } from "../components/CircularGallery";
 
 const API_BASE = "http://localhost:3001";
 
 export default function Exhibition() {
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [targetCardIndex, setTargetCardIndex] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,17 +61,26 @@ export default function Exhibition() {
     );
   }
 
-  // Prepare gallery items from all visible cards
-  const galleryItems = blocks.flatMap((block) =>
-    block.cards
-      .filter((card) => card.visible !== false && card.images.length > 0)
-      .map((card) => ({
-        image: `${API_BASE}${card.images[0].url}`,
-        text: card.title,
-      }))
-  );
+  // Get current block
+  const currentBlock = blocks[currentBlockIndex];
 
-  if (galleryItems.length === 0) {
+  // Prepare gallery items from current block's visible cards
+  const galleryItems: GalleryCard[] = currentBlock
+    ? currentBlock.cards
+        .filter((card) => card.visible !== false && card.images.length > 0)
+        .map((card) => ({
+          image: `${API_BASE}${card.images[0].url}`,
+          images: card.images.map((img) => ({
+            url: `${API_BASE}${img.url}`,
+            caption: img.caption,
+          })),
+          title: card.title,
+          description: card.description,
+          imageCaption: card.images[0]?.caption,
+        }))
+    : [];
+
+  if (galleryItems.length === 0 && blocks.length > 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -79,25 +93,41 @@ export default function Exhibition() {
     );
   }
 
+  // 處理點擊 Progress Bar 切換卡片
+  const handleCardChange = (cardIndex: number) => {
+    setTargetCardIndex(cardIndex);
+    // 重置 targetCardIndex，避免影響後續的滑動操作
+    setTimeout(() => setTargetCardIndex(undefined), 100);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
-      {/* Page Title */}
-
-      {/* Circular Gallery */}
-      <div className="w-screen h-screen">
-        <CircularGallery
+      {/* Enhanced Gallery */}
+      <div className="w-screen" style={{ height: 'calc(100vh - 150px)' }}>
+        <EnhancedGallery
           items={galleryItems}
           bend={1}
-          textColor="#ffffff"
-          borderRadius={0.05}
-          font="bold 30px 'Noto Sans TC', sans-serif"
           scrollSpeed={2}
           scrollEase={0.05}
+          onCardIndexChange={setCurrentCardIndex}
+          targetCardIndex={targetCardIndex}
         />
       </div>
 
+      {/* Block Navigator */}
+      {blocks.length > 0 && (
+        <BlockNavigator
+          blocks={blocks}
+          currentBlockIndex={currentBlockIndex}
+          currentCardIndex={currentCardIndex}
+          currentCardCount={galleryItems.length}
+          onBlockChange={setCurrentBlockIndex}
+          onCardChange={handleCardChange}
+        />
+      )}
+
       {/* Navigation to Admin */}
-      <div className="fixed bottom-4 right-4 z-20">
+      <div className="fixed bottom-[160px] right-4 z-20">
         <a
           href="/admin"
           className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
