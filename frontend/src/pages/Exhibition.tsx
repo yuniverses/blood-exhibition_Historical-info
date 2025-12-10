@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, type Block } from "../api";
 import EnhancedGallery from "../components/EnhancedGallery";
 import BlockNavigator from "../components/BlockNavigator";
+import Header from "../components/Header";
 import type { GalleryCard } from "../components/CircularGallery";
 
 const API_BASE = "http://localhost:3001";
@@ -102,6 +103,9 @@ export default function Exhibition() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
+      {/* Header */}
+      <Header />
+
       {/* Enhanced Gallery */}
       <div className="w-screen" style={{ height: 'calc(100vh - 150px)' }}>
         <EnhancedGallery

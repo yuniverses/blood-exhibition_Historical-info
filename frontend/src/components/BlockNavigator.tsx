@@ -66,14 +66,14 @@ export default function BlockNavigator({
   const visibleIndices = getVisibleTitles();
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-white" style={{ zIndex: 30 }}>
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center pb-8" style={{ zIndex: 30, width: 'min(50vw, 45rem)', gap: '1.5rem' }}>
       {/* Progress Bar - 基於當前區塊的卡片數量，高亮當前聚焦的卡片，可點擊切換 */}
-      <div className="flex w-full h-[8px]">
+      <div className="flex w-full" style={{ height: '0.25rem', gap: '0.5rem' }}>
         {Array.from({ length: currentCardCount }).map((_, index) => (
           <button
             key={index}
             onClick={() => onCardChange?.(index)}
-            className="flex-1 mx-[6px] transition-colors duration-300 hover:opacity-80 cursor-pointer"
+            className="flex-1 transition-colors duration-300 hover:opacity-80 cursor-pointer"
             style={{
               backgroundColor: index === currentCardIndex ? '#5a5a5a' : '#d9d9d9',
             }}
@@ -85,10 +85,11 @@ export default function BlockNavigator({
       {/* Section Titles - 固定顯示 3 個標題（左、中、右），支援滑動切換 */}
       <div
         ref={titleContainerRef}
-        className="flex items-center justify-center gap-[85px] py-[30px] select-none"
+        className="flex items-center justify-center select-none w-full"
         style={{
           fontFamily: "'Noto Sans TC', sans-serif",
           cursor: isDragging ? 'grabbing' : 'grab',
+          gap: '4rem',
         }}
         onMouseDown={(e) => handleStart(e.clientX)}
         onMouseMove={(e) => {
@@ -105,12 +106,13 @@ export default function BlockNavigator({
         onTouchEnd={(e) => handleEnd(e.changedTouches[0].clientX)}
       >
         {blocks.length === 0 ? (
-          <p className="text-[#292c33] text-[24px] font-bold">沒有區塊</p>
+          <p className="text-white font-bold" style={{ fontSize: 'clamp(1.2rem, 2vw, 1.5rem)' }}>沒有區塊</p>
         ) : blocks.length === 1 ? (
           // 只有一個區塊：只顯示中間
           <p
-            className="text-[#292c33] text-[24px] font-bold text-center"
+            className="text-white font-bold text-center"
             style={{
+              fontSize: 'clamp(1.2rem, 2vw, 1.5rem)',
               opacity: 1,
               transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
@@ -124,9 +126,9 @@ export default function BlockNavigator({
               onClick={() => onBlockChange(visibleIndices[0])}
               className="flex-shrink-0"
               style={{
-                fontSize: visibleIndices[0] === currentBlockIndex ? '24px' : '18px',
+                fontSize: visibleIndices[0] === currentBlockIndex ? 'clamp(1.2rem, 2vw, 1.5rem)' : 'clamp(1rem, 1.6vw, 1.2rem)',
                 fontWeight: 'bold',
-                color: '#292c33',
+                color: 'white',
                 opacity: visibleIndices[0] === currentBlockIndex ? 1 : 0.5,
                 cursor: 'pointer',
                 transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -138,9 +140,9 @@ export default function BlockNavigator({
               onClick={() => onBlockChange(visibleIndices[1])}
               className="flex-shrink-0"
               style={{
-                fontSize: visibleIndices[1] === currentBlockIndex ? '24px' : '18px',
+                fontSize: visibleIndices[1] === currentBlockIndex ? 'clamp(1.2rem, 2vw, 1.5rem)' : 'clamp(1rem, 1.6vw, 1.2rem)',
                 fontWeight: 'bold',
-                color: '#292c33',
+                color: 'white',
                 opacity: visibleIndices[1] === currentBlockIndex ? 1 : 0.5,
                 cursor: 'pointer',
                 transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -157,9 +159,9 @@ export default function BlockNavigator({
               onClick={() => onBlockChange(visibleIndices[0])}
               className="flex-shrink-0"
               style={{
-                fontSize: '18px',
+                fontSize: 'clamp(1rem, 1.6vw, 1.2rem)',
                 fontWeight: 'bold',
-                color: '#292c33',
+                color: 'white',
                 opacity: 0.5,
                 cursor: 'pointer',
                 transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -170,9 +172,10 @@ export default function BlockNavigator({
 
             {/* 中間標題（當前） */}
             <p
-              className="text-[24px] font-bold text-center"
+              className="font-bold text-center"
               style={{
-                color: '#292c33',
+                fontSize: 'clamp(1.2rem, 2vw, 1.5rem)',
+                color: 'white',
                 opacity: 1,
                 transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
@@ -185,9 +188,9 @@ export default function BlockNavigator({
               onClick={() => onBlockChange(visibleIndices[2])}
               className="flex-shrink-0"
               style={{
-                fontSize: '18px',
+                fontSize: 'clamp(1rem, 1.6vw, 1.2rem)',
                 fontWeight: 'bold',
-                color: '#292c33',
+                color: 'white',
                 opacity: 0.5,
                 cursor: 'pointer',
                 transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',

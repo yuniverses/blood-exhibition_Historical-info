@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { GalleryCard } from './CircularGallery';
 import { IconChevronRight } from './Icons';
+import { CardModal } from './CardModal';
 
 interface EnhancedGalleryProps {
   items: GalleryCard[];
@@ -37,6 +38,13 @@ export default function EnhancedGallery({
     items.reduce((acc, _, index) => ({ ...acc, [index]: 0 }), {})
   );
 
+  // 卡片彈窗狀態
+  const [selectedCard, setSelectedCard] = useState<GalleryCard | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 卡片翻轉狀態：記錄哪個卡片正在翻轉
+  const [flippingCardIndex, setFlippingCardIndex] = useState<number | null>(null);
+
   const cardWidth = 375 + 100; // Card width + gap
   const enableScroll = items.length >= 3;
 
@@ -56,6 +64,29 @@ export default function EnhancedGallery({
 
       return { ...prev, [originalIndex]: newIdx };
     });
+  };
+
+  // 卡片點擊處理函數
+  const handleCardClick = (card: GalleryCard, originalIndex: number) => {
+    // 先觸發卡片翻轉 + 放大動畫
+    setFlippingCardIndex(originalIndex);
+
+    // 在動畫進行到一半時打開 modal，實現無縫銜接
+    setTimeout(() => {
+      setSelectedCard(card);
+      setIsModalOpen(true);
+    }, 375); // 在翻轉到側面時打開 modal（0.75s 的一半）
+
+    // 稍後重置翻轉狀態
+    setTimeout(() => {
+      setFlippingCardIndex(null);
+    }, 750);
+  };
+
+  // 關閉彈窗
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedCard(null), 300); // 延遲清除，讓關閉動畫完成
   };
 
   // 吸附到最近的卡片位置
@@ -288,96 +319,64 @@ export default function EnhancedGallery({
           const images = card.images || [{ url: card.image, caption: card.imageCaption }];
           const currentImage = images[currentImgIdx];
 
+          const isFlipping = flippingCardIndex === originalIndex;
+
           return (
             <div
               key={virtualIndex}
               className="absolute"
-              style={getCardStyle(virtualIndex)}
+              style={{
+                ...getCardStyle(virtualIndex),
+                perspective: '1500px',
+              }}
             >
-              <div className="flex flex-col gap-4 items-center w-[375px]">
-                {/* Card Content */}
+              <div className="flex flex-col gap-6 items-center w-[375px]">
+                {/* Card Content - 簡化版：只顯示圖片和名稱 */}
                 <div
-                  className="bg-white rounded-[10px] p-[17.5px] flex flex-col gap-6 shadow-lg"
-                  style={{ width: '375px', height: '400px', fontFamily: "'Noto Sans TC', sans-serif" }}
+                  className="cursor-pointer"
+                  style={{
+                    width: '375px',
+                    fontFamily: "'Noto Sans TC', sans-serif",
+                    transformStyle: 'preserve-3d',
+                    transform: isFlipping
+                      ? 'rotateY(90deg) scale(2.2)'
+                      : 'rotateY(0deg) scale(1)',
+                    opacity: isFlipping ? 0 : 1,
+                    transition: 'all 0.75s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  }}
+                  onClick={() => handleCardClick(card, originalIndex)}
                 >
                   {/* Image Section */}
-                  <div className="flex flex-col gap-2.5">
-                    <div className="relative bg-[#d9d9d9] h-[237px] w-full rounded overflow-hidden">
-                      <img
-                        src={currentImage.url}
-                        alt={card.title}
-                        className="w-full h-full object-cover"
-                      />
-                      {/* Navigation Arrows - 只在有多張圖片時顯示 */}
-                      {images.length > 1 && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleImageChange(originalIndex, 'next');
-                            }}
-                            className="absolute right-[13px] top-1/2 -translate-y-1/2 bg-[#bbbbbb] hover:bg-[#999999] rounded-full p-1.5 transition-colors"
-                          >
-                            <IconChevronRight size={20} className="text-white" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleImageChange(originalIndex, 'prev');
-                            }}
-                            className="absolute left-[13px] top-1/2 -translate-y-1/2 bg-[#bbbbbb] hover:bg-[#999999] rounded-full p-1.5 transition-colors"
-                          >
-                            <IconChevronRight size={20} className="text-white rotate-180" />
-                          </button>
-                        </>
-                      )}
-                      {/* Dots Indicator - 動態生成 */}
-                      {images.length > 1 && (
-                        <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex gap-1.5">
-                          {images.map((_, imgIdx) => (
-                            <div
-                              key={imgIdx}
-                              className="w-1.5 h-1.5 rounded-full"
-                              style={{
-                                backgroundColor: imgIdx === currentImgIdx ? '#ffffff' : '#9ca3af',
-                              }}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {currentImage.caption && (
-                      <p className="font-medium text-[#292c33] text-[11.7px]">
-                        {currentImage.caption}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Text Content */}
-                  <div className="flex flex-col gap-2.5">
-                    <h3 className="font-bold text-[#292c33] text-[22px] leading-tight">
-                      {card.title}
-                    </h3>
-                    {card.description && (
-                      <p className="font-medium text-[#292c33] text-[14px] line-clamp-3">
-                        {card.description}
-                      </p>
-                    )}
+                  <div className="relative bg-[#d9d9d9] h-[450px] w-full rounded-[10px] overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                    <img
+                      src={currentImage.url}
+                      alt={card.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
 
-                {/* Large Title Below Card */}
-                <p
+                {/* Title Below Image */}
+                <h3
                   className="font-bold text-white text-[30px] text-center leading-tight"
                   style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
                 >
                   {card.title}
-                </p>
+                </h3>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Card Modal */}
+      {selectedCard && (
+        <CardModal
+          card={selectedCard}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 }
