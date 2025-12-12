@@ -354,7 +354,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
           onWheel={handleWheel} // Add wheel listener
         >
           <div className="relative" style={{
-            width: isWideLayout ? 'min(50vw, 668px)' : 'min(85vw, 459px)',
+            width: isWideLayout ? 'min(50vw, 668px)' : 'min(65vw, 459px)',
             height: isWideLayout ? 'min(60vh, 573px)' : 'min(50vh, 394px)',
             perspective: '1200px'
           }}>
@@ -363,7 +363,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
                 key={index}
                 style={{
                   ...getImageStyle(index),
-                  width: isWideLayout ? 'min(33vw, 445px)' : 'min(77vw, 306px)',
+                  width: isWideLayout ? 'min(33vw, 445px)' : 'min(55vw, 306px)',
                   height: isWideLayout ? 'min(40vh, 369px)' : 'min(36vh, 254px)',
                 }}
                 className="rounded-lg overflow-hidden"
@@ -410,7 +410,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
         >
           <h2
             className={`font-bold text-white leading-normal ${
-              isWideLayout ? 'text-[clamp(20px,2vw,28.289px)] mb-4' : 'text-[20px] shrink-0'
+              isWideLayout ? 'text-[clamp(1.25rem,2vw,1.768rem)] mb-4' : 'text-[1.25rem] shrink-0'
             }`}
             style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
           >
@@ -418,7 +418,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
           </h2>
           <div
             className={`text-white leading-[1.65] overflow-y-auto pr-4 custom-scrollbar ${
-              isWideLayout ? 'text-[clamp(11px,1vw,13.268px)] max-h-[18vh]' : 'text-[9.38px] max-h-[21vh]'
+              isWideLayout ? 'text-[clamp(0.6875rem,1vw,0.829rem)] max-h-[18vh]' : 'text-[0.6rem] max-h-[21vh]'
             }`}
             style={{ fontFamily: "'Noto Sans TC', sans-serif", fontWeight: 500 }}
           >
@@ -437,14 +437,14 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
             className="absolute left-[64%] top-[65%] z-20 flex items-start gap-4 invisible"
           >
             <div className="w-[104px] text-right flex-shrink-0">
-              <p className="text-white font-medium text-[14px] mt-[2px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+              <p className="text-white font-medium text-[0.875rem] mt-[2px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                 {images[currentImageIndex].caption || ''}
               </p>
             </div>
             <div className="flex flex-col gap-1">
               <div className="relative">
                 <p
-                  className="text-[16px] font-bold text-white"
+                  className="text-[1rem] font-bold text-white"
                   style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
                 >
                   {String(currentImageIndex + 1).padStart(2, '0')}
@@ -452,7 +452,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
                 <div className="absolute bottom-[-4px] left-0 w-[39px] h-0 border-b border-white" />
               </div>
               <p
-                className="text-[16px] font-bold text-[#515151]"
+                className="text-[1rem] font-bold text-[#515151]"
                 style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
               >
                 {String(images.length).padStart(2, '0')}
@@ -465,14 +465,14 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
             className="absolute right-[10%] top-[56%] z-20 flex items-start gap-3 invisible"
           >
             <div className="w-[80px] text-right flex-shrink-0">
-              <p className="text-white font-medium text-[14px] mt-[2px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+              <p className="text-white font-medium text-[0.875rem] mt-[2px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                 {images[currentImageIndex].caption || ''}
               </p>
             </div>
             <div className="flex flex-col gap-1 items-end">
               <div className="relative">
                 <p
-                  className="text-[16px] font-bold text-white"
+                  className="text-[1rem] font-bold text-white"
                   style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
                 >
                   {String(currentImageIndex + 1).padStart(2, '0')}
@@ -480,7 +480,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
                 <div className="absolute bottom-[-4px] left-0 w-[39px] h-[1px] bg-white" />
               </div>
               <p
-                className="text-[16px] font-bold text-[#515151]"
+                className="text-[1rem] font-bold text-[#515151]"
                 style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
               >
                 {String(images.length).padStart(2, '0')}

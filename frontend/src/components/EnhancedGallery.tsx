@@ -38,7 +38,18 @@ export default function EnhancedGallery({
     items.reduce((acc, _, index) => ({ ...acc, [index]: 0 }), {})
   );
 
-  const cardWidth = 375 + 100; // Card width + gap
+  // Calculate responsive card dimensions
+  // Mobile: 80vw, Desktop: 375px
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const cardBaseWidth = Math.min(375, windowWidth * 0.65);
+  const cardWidth = cardBaseWidth + (windowWidth < 768 ? 20 : 100); // Smaller gap on mobile
   const enableScroll = items.length >= 3;
 
 
@@ -191,10 +202,10 @@ export default function EnhancedGallery({
 
   // 計算卡片樣式（基於虛擬索引）
   const getCardStyle = (virtualIndex: number): React.CSSProperties => {
-    // 1 張卡片：完全置中（使用實際卡片寬度 375px，不包含 gap）
+    // 1 張卡片：完全置中（使用實際卡片寬度）
     if (items.length === 1) {
       return {
-        transform: `translateX(${window.innerWidth / 2 - 375 / 2}px) rotateZ(0deg)`,
+        transform: `translateX(${window.innerWidth / 2 - cardBaseWidth / 2}px) rotateZ(0deg)`,
         transition: 'none',
         zIndex: 10,
       };
@@ -289,18 +300,18 @@ export default function EnhancedGallery({
                 perspective: '1500px',
               }}
             >
-              <div className="flex flex-col gap-6 items-center w-[375px]">
+              <div className="flex flex-col gap-6 items-center" style={{ width: `${cardBaseWidth}px` }}>
                 {/* Card Content - 簡化版：只顯示圖片和名稱 */}
                 <div
                   className="cursor-pointer"
                   style={{
-                    width: '375px',
+                    width: '100%',
                     fontFamily: "'Noto Sans TC', sans-serif",
                   }}
                   onClick={(e) => handleCardClick(e, card)}
                 >
                   {/* Image Section */}
-                  <div className="relative bg-[#d9d9d9] h-[450px] w-full rounded-[10px] overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                  <div className="relative bg-[#d9d9d9] w-full rounded-[10px] overflow-hidden shadow-lg hover:shadow-xl transition-shadow" style={{ aspectRatio: '3/4', maxHeight: '50vh' }}>
                     <img
                       src={currentImage.url}
                       alt={card.title}
