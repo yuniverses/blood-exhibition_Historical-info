@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { gsap } from 'gsap';
 import type { GalleryCard } from './CircularGallery';
-import { DarkVeil } from './DarkVeil';
 
 interface DetailPanelProps {
   card: GalleryCard | null;
@@ -331,10 +330,6 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
       ref={containerRef}
       className={`fixed inset-0 z-50 ${isVisible ? 'pointer-events-auto' : 'pointer-events-none'}`}
     >
-      <div className="dark-veil-wrapper absolute inset-0">
-        <DarkVeil />
-      </div>
-
       <div className="relative z-10 w-full h-full">
         {/* Image carousel section */}
         <div
