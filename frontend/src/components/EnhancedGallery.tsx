@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import type { GalleryCard } from './CircularGallery';
-import { IconChevronRight } from './Icons';
-import { CardModal } from './CardModal';
 
 interface EnhancedGalleryProps {
   items: GalleryCard[];
@@ -10,6 +8,7 @@ interface EnhancedGalleryProps {
   scrollEase?: number;
   onCardIndexChange?: (index: number) => void; // 回調當前聚焦的卡片索引
   targetCardIndex?: number; // 外部控制：要滾動到的卡片索引
+  onCardClick?: (card: GalleryCard, rect: DOMRect) => void; // 新增：點擊回調
 }
 
 export default function EnhancedGallery({
@@ -19,6 +18,7 @@ export default function EnhancedGallery({
   scrollEase = 0.05,
   onCardIndexChange,
   targetCardIndex,
+  onCardClick,
 }: EnhancedGalleryProps) {
   const [currentScroll, setCurrentScroll] = useState(0);
   const [targetScroll, setTargetScroll] = useState(0);
@@ -34,45 +34,20 @@ export default function EnhancedGallery({
   const targetScrollRef = useRef(0);
 
   // 為每張原始卡片維護當前顯示的圖片索引
-  const [currentImageIndices, setCurrentImageIndices] = useState<{ [key: number]: number }>(
+  const [currentImageIndices] = useState<{ [key: number]: number }>(
     items.reduce((acc, _, index) => ({ ...acc, [index]: 0 }), {})
   );
-
-  // 卡片彈窗狀態
-  const [selectedCard, setSelectedCard] = useState<GalleryCard | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const cardWidth = 375 + 100; // Card width + gap
   const enableScroll = items.length >= 3;
 
-  // 圖片切換函數
-  const handleImageChange = (originalIndex: number, direction: 'next' | 'prev') => {
-    setCurrentImageIndices((prev) => {
-      const card = items[originalIndex];
-      const imageCount = card.images?.length || 1;
-      const currentIdx = prev[originalIndex] || 0;
-
-      let newIdx;
-      if (direction === 'next') {
-        newIdx = (currentIdx + 1) % imageCount;
-      } else {
-        newIdx = (currentIdx - 1 + imageCount) % imageCount;
-      }
-
-      return { ...prev, [originalIndex]: newIdx };
-    });
-  };
 
   // 卡片點擊處理函數
-  const handleCardClick = (card: GalleryCard) => {
-    setSelectedCard(card);
-    setIsModalOpen(true);
-  };
-
-  // 關閉彈窗
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setTimeout(() => setSelectedCard(null), 300); // 延遲清除，讓關閉動畫完成
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>, card: GalleryCard) => {
+    if (onCardClick) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      onCardClick(card, rect);
+    }
   };
 
   // 吸附到最近的卡片位置
@@ -322,7 +297,7 @@ export default function EnhancedGallery({
                     width: '375px',
                     fontFamily: "'Noto Sans TC', sans-serif",
                   }}
-                  onClick={() => handleCardClick(card)}
+                  onClick={(e) => handleCardClick(e, card)}
                 >
                   {/* Image Section */}
                   <div className="relative bg-[#d9d9d9] h-[450px] w-full rounded-[10px] overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
@@ -346,15 +321,6 @@ export default function EnhancedGallery({
           );
         })}
       </div>
-
-      {/* Card Modal */}
-      {selectedCard && (
-        <CardModal
-          card={selectedCard}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-        />
-      )}
     </div>
   );
 }

@@ -645,6 +645,7 @@ class App {
 }
 
 export interface GalleryCard {
+  id?: string; // 唯一識別碼
   image: string; // 主圖片（向後兼容）
   images?: { url: string; caption?: string }[]; // 所有圖片
   title: string;

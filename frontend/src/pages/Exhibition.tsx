@@ -4,6 +4,8 @@ import EnhancedGallery from "../components/EnhancedGallery";
 import BlockNavigator from "../components/BlockNavigator";
 import Header from "../components/Header";
 import type { GalleryCard } from "../components/CircularGallery";
+import { useFlipTransition } from "../hooks/useFlipTransition";
+import { DetailPanel } from "../components/DetailPanel";
 
 const API_BASE = "http://localhost:3001";
 
@@ -14,6 +16,9 @@ export default function Exhibition() {
   const [targetCardIndex, setTargetCardIndex] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // FLIP Animation Hook
+  const { viewMode, selectedId, selectedRect, handleOpen, handleClose } = useFlipTransition();
 
   useEffect(() => {
     loadBlocks();
@@ -70,6 +75,7 @@ export default function Exhibition() {
     ? currentBlock.cards
         .filter((card) => card.visible !== false && card.images.length > 0)
         .map((card) => ({
+          id: card.id, // Ensure ID is passed
           image: `${API_BASE}${card.images[0].url}`,
           images: card.images.map((img) => ({
             url: `${API_BASE}${img.url}`,
@@ -101,13 +107,21 @@ export default function Exhibition() {
     setTimeout(() => setTargetCardIndex(undefined), 100);
   };
 
+  // Find selected card for detail view
+  const selectedCard = galleryItems.find(item => item.id === selectedId) || null;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 relative overflow-hidden">
       {/* Header */}
-      <Header />
+      <div className={`transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <Header />
+      </div>
 
       {/* Enhanced Gallery */}
-      <div className="w-screen" style={{ height: 'calc(100vh - 150px)' }}>
+      <div 
+        className={`w-screen transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
+        style={{ height: 'calc(100vh - 150px)' }}
+      >
         <EnhancedGallery
           items={galleryItems}
           bend={1}
@@ -115,23 +129,26 @@ export default function Exhibition() {
           scrollEase={0.05}
           onCardIndexChange={setCurrentCardIndex}
           targetCardIndex={targetCardIndex}
+          onCardClick={(card, rect) => handleOpen(card.id || '', rect)}
         />
       </div>
 
       {/* Block Navigator */}
       {blocks.length > 0 && (
-        <BlockNavigator
-          blocks={blocks}
-          currentBlockIndex={currentBlockIndex}
-          currentCardIndex={currentCardIndex}
-          currentCardCount={galleryItems.length}
-          onBlockChange={setCurrentBlockIndex}
-          onCardChange={handleCardChange}
-        />
+        <div className={`transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          <BlockNavigator
+            blocks={blocks}
+            currentBlockIndex={currentBlockIndex}
+            currentCardIndex={currentCardIndex}
+            currentCardCount={galleryItems.length}
+            onBlockChange={setCurrentBlockIndex}
+            onCardChange={handleCardChange}
+          />
+        </div>
       )}
 
       {/* Navigation to Admin */}
-      <div className="fixed bottom-[160px] right-4 z-20">
+      <div className={`fixed bottom-[160px] right-4 z-20 transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <a
           href="/admin"
           className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
@@ -139,6 +156,14 @@ export default function Exhibition() {
           管理介面
         </a>
       </div>
+
+      {/* Detail Panel */}
+      <DetailPanel 
+        card={selectedCard}
+        isVisible={viewMode === 'detail'}
+        onClose={handleClose}
+        initialRect={selectedRect}
+      />
     </div>
   );
 }
