@@ -42,9 +42,6 @@ export default function EnhancedGallery({
   const [selectedCard, setSelectedCard] = useState<GalleryCard | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // 卡片翻轉狀態：記錄哪個卡片正在翻轉
-  const [flippingCardIndex, setFlippingCardIndex] = useState<number | null>(null);
-
   const cardWidth = 375 + 100; // Card width + gap
   const enableScroll = items.length >= 3;
 
@@ -67,20 +64,9 @@ export default function EnhancedGallery({
   };
 
   // 卡片點擊處理函數
-  const handleCardClick = (card: GalleryCard, originalIndex: number) => {
-    // 先觸發卡片翻轉 + 放大動畫
-    setFlippingCardIndex(originalIndex);
-
-    // 在動畫進行到一半時打開 modal，實現無縫銜接
-    setTimeout(() => {
-      setSelectedCard(card);
-      setIsModalOpen(true);
-    }, 375); // 在翻轉到側面時打開 modal（0.75s 的一半）
-
-    // 稍後重置翻轉狀態
-    setTimeout(() => {
-      setFlippingCardIndex(null);
-    }, 750);
+  const handleCardClick = (card: GalleryCard) => {
+    setSelectedCard(card);
+    setIsModalOpen(true);
   };
 
   // 關閉彈窗
@@ -319,8 +305,6 @@ export default function EnhancedGallery({
           const images = card.images || [{ url: card.image, caption: card.imageCaption }];
           const currentImage = images[currentImgIdx];
 
-          const isFlipping = flippingCardIndex === originalIndex;
-
           return (
             <div
               key={virtualIndex}
@@ -337,14 +321,8 @@ export default function EnhancedGallery({
                   style={{
                     width: '375px',
                     fontFamily: "'Noto Sans TC', sans-serif",
-                    transformStyle: 'preserve-3d',
-                    transform: isFlipping
-                      ? 'rotateY(90deg) scale(2.2)'
-                      : 'rotateY(0deg) scale(1)',
-                    opacity: isFlipping ? 0 : 1,
-                    transition: 'all 0.75s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   }}
-                  onClick={() => handleCardClick(card, originalIndex)}
+                  onClick={() => handleCardClick(card)}
                 >
                   {/* Image Section */}
                   <div className="relative bg-[#d9d9d9] h-[450px] w-full rounded-[10px] overflow-hidden shadow-lg hover:shadow-xl transition-shadow">

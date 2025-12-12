@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
 import type { GalleryCard } from './CircularGallery';
 import { DarkVeil } from './DarkVeil';
 import { IconChevronRight } from './Icons';
@@ -16,7 +17,13 @@ export const CardModal: React.FC<CardModalProps> = ({ card, isOpen, onClose }) =
   const [startY, setStartY] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [shouldRender, setShouldRender] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
+
+  // GSAP 動畫引用
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const textContainerRef = useRef<HTMLDivElement>(null);
+  const captionContainerRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const images = card.images && card.images.length > 0
     ? card.images
@@ -35,23 +42,72 @@ export const CardModal: React.FC<CardModalProps> = ({ card, isOpen, onClose }) =
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 控制 modal 的渲染和動畫
+  // 簡單直接的動畫邏輯
   useEffect(() => {
     if (isOpen) {
-      // 打開時：先渲染到 DOM，然後立即觸發動畫（無縫銜接卡片翻轉）
+      // 1. 先渲染到 DOM
       setShouldRender(true);
-      requestAnimationFrame(() => {
-        setIsAnimating(true);
+    } else if (shouldRender) {
+      // 2. 關閉：執行動畫後移除
+      const elements = [
+        imageContainerRef.current,
+        textContainerRef.current,
+        captionContainerRef.current,
+        closeButtonRef.current
+      ];
+
+      gsap.to(elements, {
+        y: 80,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power3.in',
+        stagger: 0.08,
+        onComplete: () => setShouldRender(false)
       });
-    } else {
-      // 關閉時：先觸發關閉動畫，然後從 DOM 移除
-      setIsAnimating(false);
-      const timer = setTimeout(() => {
-        setShouldRender(false);
-      }, 500); // 等待動畫完成
-      return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, shouldRender]);
+
+  // 開啟動畫：在 DOM 渲染後立即執行
+  useEffect(() => {
+    if (shouldRender && isOpen) {
+      const elements = [
+        imageContainerRef.current,
+        textContainerRef.current,
+        captionContainerRef.current,
+        closeButtonRef.current
+      ];
+
+      // 立即設置初始狀態（避免閃爍）
+      gsap.set(elements, { y: 80, opacity: 0 });
+
+      // 執行開啟動畫
+      const tl = gsap.timeline();
+      tl.to(imageContainerRef.current, {
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        ease: 'power3.out',
+      })
+      .to(textContainerRef.current, {
+        y: 0,
+        opacity: 1,
+        duration: 0.7,
+        ease: 'power3.out',
+      }, '-=0.5')
+      .to(captionContainerRef.current, {
+        y: 0,
+        opacity: 1,
+        duration: 0.6,
+        ease: 'power3.out',
+      }, '-=0.4')
+      .to(closeButtonRef.current, {
+        y: 0,
+        opacity: 1,
+        duration: 0.6,
+        ease: 'power3.out',
+      }, '-=0.4');
+    }
+  }, [shouldRender, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -163,23 +219,17 @@ export const CardModal: React.FC<CardModalProps> = ({ card, isOpen, onClose }) =
 
   return (
     <div
-      className={`fixed inset-0 z-50 transition-all duration-500 ${
-        isAnimating ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}
+      ref={containerRef}
+      className="fixed inset-0 z-50"
     >
       <DarkVeil />
 
-      {/* Content container - 無縫銜接淡入效果 */}
-      <div
-        className="relative z-10 w-full h-full transition-all duration-500"
-        style={{
-          transform: isAnimating ? 'scale(1)' : 'scale(0.95)',
-          transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}
-      >
+      {/* Content container */}
+      <div className="relative z-10 w-full h-full">
 
         {/* Image carousel section - 垂直堆疊輪播 */}
         <div
+          ref={imageContainerRef}
           className={`absolute ${
             isWideLayout
               ? 'left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2'
@@ -254,11 +304,14 @@ export const CardModal: React.FC<CardModalProps> = ({ card, isOpen, onClose }) =
         </div>
 
         {/* 文字內容區 - 使用百分比定位 */}
-        <div className={`absolute flex flex-col ${
-          isWideLayout
-            ? 'left-[30%] top-[68%] w-[26%]'
-            : 'left-[6%] right-[6%] bottom-[18%] w-[63%]'
-        } ${!isWideLayout ? 'gap-[10px]' : ''}`}>
+        <div
+          ref={textContainerRef}
+          className={`absolute flex flex-col ${
+            isWideLayout
+              ? 'left-[30%] top-[68%] w-[26%]'
+              : 'left-[6%] right-[6%] bottom-[18%] w-[63%]'
+          } ${!isWideLayout ? 'gap-[10px]' : ''}`}
+        >
           <h2
             className={`font-bold text-white leading-normal ${
               isWideLayout ? 'text-[clamp(20px,2vw,28.289px)] mb-4' : 'text-[20px] shrink-0'
@@ -283,7 +336,10 @@ export const CardModal: React.FC<CardModalProps> = ({ card, isOpen, onClose }) =
 
         {/* 圖片說明文字和編號 (Figma 設計風格) - 使用百分比定位 */}
         {isWideLayout ? (
-          <div className="absolute left-[64%] top-[65%] z-20 flex items-start gap-4">
+          <div
+            ref={captionContainerRef}
+            className="absolute left-[64%] top-[65%] z-20 flex items-start gap-4"
+          >
             {/* 預留固定空間給圖片說明文字 */}
             <div className="w-[104px] text-right flex-shrink-0">
               <p className="text-white font-medium text-[14px] mt-[2px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
@@ -311,7 +367,10 @@ export const CardModal: React.FC<CardModalProps> = ({ card, isOpen, onClose }) =
             </div>
           </div>
         ) : (
-          <div className="absolute right-[10%] top-[56%] z-20 flex items-start gap-3">
+          <div
+            ref={captionContainerRef}
+            className="absolute right-[10%] top-[56%] z-20 flex items-start gap-3"
+          >
             {/* 預留固定空間給圖片說明文字 */}
             <div className="w-[80px] text-right flex-shrink-0">
               <p className="text-white font-medium text-[14px] mt-[2px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
@@ -343,6 +402,7 @@ export const CardModal: React.FC<CardModalProps> = ({ card, isOpen, onClose }) =
 
       {/* Close button - 底部中央膠囊樣式 (Figma 設計) */}
       <button
+        ref={closeButtonRef}
         onClick={onClose}
         className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 w-[85px] h-[40px] flex items-center justify-center"
         aria-label="關閉"
