@@ -131,6 +131,12 @@ export default function Exhibition() {
         />
       </div>
 
+      {/* Semi-transparent Black Overlay */}
+      <div
+        className="fixed inset-0 z-[1] pointer-events-none"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}
+      />
+
       {/* Header */}
       <div className={`relative z-10 transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <Header />
