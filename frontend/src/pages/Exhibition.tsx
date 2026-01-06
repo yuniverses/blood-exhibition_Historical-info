@@ -6,6 +6,7 @@ import Header from "../components/Header";
 import type { GalleryCard } from "../components/CircularGallery";
 import { useFlipTransition } from "../hooks/useFlipTransition";
 import { DetailPanel } from "../components/DetailPanel";
+import PixelBlast from "../components/PixelBlast";
 
 const API_BASE = "http://localhost:3001";
 
@@ -111,15 +112,33 @@ export default function Exhibition() {
   const selectedCard = galleryItems.find(item => item.id === selectedId) || null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: '#000000' }}>
+      {/* PixelBlast Background */}
+      <div className="fixed inset-0 z-0">
+        <PixelBlast
+          variant="square"
+          pixelSize={4}
+          color="#f16f96"
+          patternScale={2.5}
+          patternDensity={1}
+          enableRipples
+          rippleSpeed={0.3}
+          rippleThickness={0.1}
+          rippleIntensityScale={1}
+          speed={0.5}
+          transparent
+          edgeFade={0.25}
+        />
+      </div>
+
       {/* Header */}
-      <div className={`transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+      <div className={`relative z-10 transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <Header />
       </div>
 
       {/* Enhanced Gallery */}
-      <div 
-        className={`w-screen transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
+      <div
+        className={`relative z-10 w-screen transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         style={{ height: 'calc(100vh - 150px)' }}
       >
         <EnhancedGallery
@@ -135,7 +154,7 @@ export default function Exhibition() {
 
       {/* Block Navigator */}
       {blocks.length > 0 && (
-        <div className={`transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className={`relative z-10 transition-opacity duration-500 ${viewMode === 'detail' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           <BlockNavigator
             blocks={blocks}
             currentBlockIndex={currentBlockIndex}
