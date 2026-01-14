@@ -314,7 +314,7 @@ export const CardModal: React.FC<CardModalProps> = ({ card, isOpen, onClose }) =
         >
           <h2
             className={`font-bold text-white leading-normal ${
-              isWideLayout ? 'text-[clamp(20px,2vw,28.289px)] mb-4' : 'text-[20px] shrink-0'
+              isWideLayout ? 'text-[clamp(16px,1.6vw,22.631px)] mb-4' : 'text-[16px] shrink-0'
             }`}
             style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
           >

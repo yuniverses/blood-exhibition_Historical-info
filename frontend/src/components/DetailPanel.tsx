@@ -405,7 +405,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
         >
           <h2
             className={`font-bold text-white leading-normal ${
-              isWideLayout ? 'text-[clamp(1.25rem,2vw,1.768rem)] mb-4' : 'text-[1.25rem] shrink-0'
+              isWideLayout ? 'text-[clamp(1rem,1.6vw,1.414rem)] mb-4' : 'text-[1rem] shrink-0'
             }`}
             style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
           >
