@@ -7,7 +7,7 @@ export default async function handler(req, res) {
       .select('*')
       .order('created_at', { ascending: true });
 
-    if (error) return res.status(500).json({ error: '讀取資料失敗' });
+    if (error) return res.status(500).json({ error: '讀取資料失敗', detail: error.message, code: error.code });
 
     return res.json(data.map(b => ({
       id: b.id,
