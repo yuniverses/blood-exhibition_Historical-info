@@ -77,9 +77,9 @@ export default function Exhibition() {
         .filter((card) => card.visible !== false && card.images.length > 0)
         .map((card) => ({
           id: card.id, // Ensure ID is passed
-          image: `${API_BASE}${card.images[0].url}`,
+          image: card.images[0].url.startsWith('http') ? card.images[0].url : `${API_BASE}${card.images[0].url}`,
           images: card.images.map((img) => ({
-            url: `${API_BASE}${img.url}`,
+            url: img.url.startsWith('http') ? img.url : `${API_BASE}${img.url}`,
             caption: img.caption,
           })),
           title: card.title,

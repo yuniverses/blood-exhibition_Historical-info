@@ -756,7 +756,7 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
                 <div className="relative bg-[#d9d9d9] h-[100px] w-[160px] rounded-[10px] flex items-center justify-center overflow-hidden">
                   {image.url ? (
                     <img
-                      src={`${API_BASE}${image.url}`}
+                      src={image.url.startsWith('http') ? image.url : `${API_BASE}${image.url}`}
                       alt={`圖片 ${idx + 1}`}
                       className="w-full h-full object-cover"
                     />
@@ -831,7 +831,7 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
                     {images.length > 0 ? (
                       <div className="relative">
                         <img
-                          src={`${API_BASE}${images[currentImageIndex].url}`}
+                          src={images[currentImageIndex].url.startsWith('http') ? images[currentImageIndex].url : `${API_BASE}${images[currentImageIndex].url}`}
                           alt="預覽"
                           className="w-full h-[202px] object-cover bg-[#d9d9d9]"
                         />
