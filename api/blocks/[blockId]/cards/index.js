@@ -1,4 +1,5 @@
 import { supabase } from '../../../../api/_lib/supabase.js';
+import { normalizeCard } from '../../../../api/_lib/image-url.js';
 
 export default async function handler(req, res) {
   const { blockId } = req.query;
@@ -13,11 +14,11 @@ export default async function handler(req, res) {
 
   if (fetchErr) return res.status(404).json({ error: '找不到區塊' });
 
-  const newCard = {
+  const newCard = normalizeCard({
     id: Date.now().toString(),
     ...req.body,
     createdAt: new Date().toISOString(),
-  };
+  });
 
   const updatedCards = [...(block.cards || []), newCard];
 

@@ -7,8 +7,7 @@ import type { GalleryCard } from "../components/CircularGallery";
 import { useFlipTransition } from "../hooks/useFlipTransition";
 import { DetailPanel } from "../components/DetailPanel";
 import PixelBlast from "../components/PixelBlast";
-
-const API_BASE = "http://localhost:3001";
+import { resolveImageUrl } from "../lib/imageUrl";
 
 export default function Exhibition() {
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -77,9 +76,9 @@ export default function Exhibition() {
         .filter((card) => card.visible !== false && card.images.length > 0)
         .map((card) => ({
           id: card.id, // Ensure ID is passed
-          image: card.images[0].url.startsWith('http') ? card.images[0].url : `${API_BASE}${card.images[0].url}`,
+          image: resolveImageUrl(card.images[0].url),
           images: card.images.map((img) => ({
-            url: img.url.startsWith('http') ? img.url : `${API_BASE}${img.url}`,
+            url: resolveImageUrl(img.url),
             caption: img.caption,
           })),
           title: card.title,

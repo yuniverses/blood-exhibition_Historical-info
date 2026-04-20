@@ -2,8 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, type Block, type Card, type Image } from '../api';
 import { IconSearch, IconEdit, IconLogOut, IconAdd, IconUpload, IconX, IconChevronLeft, IconChevronRight } from '../components/Icons';
-
-const API_BASE = 'http://localhost:3001';
+import { resolveImageUrl } from '../lib/imageUrl';
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -756,7 +755,7 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
                 <div className="relative bg-[#d9d9d9] h-[100px] w-[160px] rounded-[10px] flex items-center justify-center overflow-hidden">
                   {image.url ? (
                     <img
-                      src={image.url.startsWith('http') ? image.url : `${API_BASE}${image.url}`}
+                      src={resolveImageUrl(image.url)}
                       alt={`圖片 ${idx + 1}`}
                       className="w-full h-full object-cover"
                     />
@@ -831,7 +830,7 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
                     {images.length > 0 ? (
                       <div className="relative">
                         <img
-                          src={images[currentImageIndex].url.startsWith('http') ? images[currentImageIndex].url : `${API_BASE}${images[currentImageIndex].url}`}
+                          src={resolveImageUrl(images[currentImageIndex].url)}
                           alt="預覽"
                           className="w-full h-[202px] object-cover bg-[#d9d9d9]"
                         />

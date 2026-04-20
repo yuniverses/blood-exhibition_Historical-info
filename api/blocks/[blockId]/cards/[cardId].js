@@ -1,4 +1,5 @@
 import { supabase } from '../../../../api/_lib/supabase.js';
+import { normalizeCard } from '../../../../api/_lib/image-url.js';
 
 export default async function handler(req, res) {
   const { blockId, cardId } = req.query;
@@ -17,12 +18,12 @@ export default async function handler(req, res) {
     const idx = cards.findIndex(c => c.id === cardId);
     if (idx === -1) return res.status(404).json({ error: '找不到卡片' });
 
-    cards[idx] = {
+    cards[idx] = normalizeCard({
       ...cards[idx],
       ...req.body,
       id: cardId,
       updatedAt: new Date().toISOString(),
-    };
+    });
 
     const { error } = await supabase
       .from('blocks')

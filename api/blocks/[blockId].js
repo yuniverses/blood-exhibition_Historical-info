@@ -1,4 +1,5 @@
 import { supabase } from '../_lib/supabase.js';
+import { normalizeBlock } from '../_lib/image-url.js';
 
 export default async function handler(req, res) {
   const { blockId: id } = req.query;
@@ -12,13 +13,13 @@ export default async function handler(req, res) {
 
     if (error) return res.status(404).json({ error: '找不到區塊' });
 
-    return res.json({
+    return res.json(normalizeBlock({
       id: data.id,
       title: data.title,
       cards: data.cards,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
-    });
+    }));
   }
 
   if (req.method === 'PUT') {
@@ -31,12 +32,12 @@ export default async function handler(req, res) {
 
     if (error) return res.status(500).json({ error: '更新區塊失敗' });
 
-    return res.json({
+    return res.json(normalizeBlock({
       id: data.id,
       title: data.title,
       cards: data.cards,
       updatedAt: data.updated_at,
-    });
+    }));
   }
 
   if (req.method === 'DELETE') {

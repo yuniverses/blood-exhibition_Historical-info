@@ -1,4 +1,5 @@
 import { supabase } from '../_lib/supabase.js';
+import { normalizeBlock } from '../_lib/image-url.js';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -9,7 +10,7 @@ export default async function handler(req, res) {
 
     if (error) return res.status(500).json({ error: '讀取資料失敗', detail: error.message, code: error.code });
 
-    return res.json(data.map(b => ({
+    return res.json(data.map(b => normalizeBlock({
       id: b.id,
       title: b.title,
       cards: b.cards,
@@ -30,12 +31,12 @@ export default async function handler(req, res) {
 
     if (error) return res.status(500).json({ error: '建立區塊失敗' });
 
-    return res.status(201).json({
+    return res.status(201).json(normalizeBlock({
       id: data.id,
       title: data.title,
       cards: data.cards,
       createdAt: data.created_at,
-    });
+    }));
   }
 
   res.status(405).end();
