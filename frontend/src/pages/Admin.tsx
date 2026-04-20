@@ -156,6 +156,7 @@ export default function Admin() {
   };
 
   const currentBlock = blocks.find((b) => b.id === currentBlockId);
+  const filteredCards = getFilteredCards();
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">載入中...</div>;
@@ -164,43 +165,43 @@ export default function Admin() {
   return (
     <div className="bg-white relative min-h-screen">
       {/* Sidebar */}
-      <div className="fixed bg-[#f2f2f2] h-screen flex flex-col gap-12 items-center px-[40px] py-[50px] w-[294px] left-0 top-0">
-        <p className="font-bold text-[28px] text-black w-full" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+      <div className="bg-[#f2f2f2] flex flex-col gap-8 px-5 py-6 lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:w-[294px] lg:gap-12 lg:px-[40px] lg:py-[50px] lg:items-center">
+        <p className="font-bold text-[24px] text-black w-full lg:text-[28px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
           資料管理系統
         </p>
 
-        <div className="flex flex-col h-full items-start justify-between w-full">
+        <div className="flex flex-col gap-8 lg:h-full lg:items-start lg:justify-between w-full">
           <div className="flex flex-col gap-0">
             <p className="font-semibold text-[#838383] text-[16px] mb-2" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
               資料呈現區
             </p>
-            <div className="flex flex-col gap-2 w-[214px]">
+            <div className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:w-[214px] lg:overflow-visible lg:pb-0">
               {blocks.map((block) => (
                 <button
                   key={block.id}
                   onClick={() => setCurrentBlockId(block.id)}
-                  className={`flex items-center px-5 py-2.5 w-full text-left rounded transition-colors ${
+                  className={`flex min-w-fit items-center px-4 py-2.5 text-left rounded transition-colors lg:w-full lg:px-5 ${
                     currentBlockId === block.id ? 'bg-[#c5e4ff]' : 'hover:bg-gray-100'
                   }`}
                 >
-                  <p className="font-medium text-[20px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  <p className="font-medium text-[16px] text-black whitespace-nowrap lg:text-[20px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                     {block.title || '未命名區塊'}
                   </p>
                 </button>
               ))}
               <button
                 onClick={() => setShowBlockForm(true)}
-                className="bg-white flex gap-2 items-center px-5 py-2.5 rounded w-full mt-2 hover:bg-gray-50 transition-colors"
+                className="bg-white flex gap-2 items-center px-4 py-2.5 rounded min-w-fit lg:w-full lg:mt-2 lg:px-5 hover:bg-gray-50 transition-colors"
               >
                 <IconAdd size={18} className="text-[#838383]" />
-                <p className="font-medium text-[#838383] text-[18px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                <p className="font-medium text-[#838383] text-[16px] whitespace-nowrap lg:text-[18px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                   新增區塊
                 </p>
               </button>
             </div>
           </div>
 
-          <div className="flex flex-col gap-[30px] w-[214px]">
+          <div className="flex flex-col gap-4 lg:gap-[30px] lg:w-[214px]">
             <button
               onClick={() => navigate('/')}
               className="bg-white flex items-center justify-center px-5 py-2.5 rounded w-full"
@@ -210,7 +211,7 @@ export default function Admin() {
               </p>
             </button>
 
-            <div className="flex items-center justify-between w-full">
+            <div className="hidden lg:flex items-center justify-between w-full">
               <div className="flex gap-3 items-center">
                 <div className="size-9 rounded-full bg-gray-300" />
                 <p className="font-medium text-[18px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
@@ -224,17 +225,17 @@ export default function Admin() {
       </div>
 
       {/* Main Content */}
-      <div className="ml-[294px] flex flex-col gap-5 p-12">
+      <div className="flex flex-col gap-5 px-5 py-6 lg:ml-[294px] lg:p-12">
         {currentBlock ? (
           <>
             {/* Header */}
-            <div className="flex items-end justify-between">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex flex-col gap-1.5">
                 <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                   資料呈現區
                 </p>
                 {editingBlockTitle ? (
-                  <div className="flex gap-4 items-center">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                     <input
                       type="text"
                       value={blockTitleInput}
@@ -246,30 +247,32 @@ export default function Admin() {
                           handleCancelEditBlockTitle();
                         }
                       }}
-                      className="font-bold text-[28px] text-black border-b-2 border-blue-500 outline-none bg-transparent"
+                      className="font-bold text-[24px] lg:text-[28px] text-black border-b-2 border-blue-500 outline-none bg-transparent"
                       style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
                       autoFocus
                     />
-                    <button
-                      onClick={handleCancelEditBlockTitle}
-                      className="bg-white border border-[#5a5a5a] flex items-center justify-center px-4 py-2 rounded"
-                    >
-                      <p className="font-medium text-[#838383] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
-                        取消
-                      </p>
-                    </button>
-                    <button
-                      onClick={handleUpdateBlockTitle}
-                      className="bg-[#339cfd] flex items-center justify-center px-4 py-2 rounded"
-                    >
-                      <p className="font-medium text-white text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
-                        儲存
-                      </p>
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleCancelEditBlockTitle}
+                        className="bg-white border border-[#5a5a5a] flex items-center justify-center px-4 py-2 rounded"
+                      >
+                        <p className="font-medium text-[#838383] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                          取消
+                        </p>
+                      </button>
+                      <button
+                        onClick={handleUpdateBlockTitle}
+                        className="bg-[#339cfd] flex items-center justify-center px-4 py-2 rounded"
+                      >
+                        <p className="font-medium text-white text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                          儲存
+                        </p>
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex gap-4 items-center">
-                    <p className="font-bold text-[28px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                  <div className="flex gap-3 items-center">
+                    <p className="font-bold text-[24px] lg:text-[28px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                       {currentBlock.title || '未命名區塊'}
                     </p>
                     <button onClick={handleStartEditBlockTitle}>
@@ -280,7 +283,7 @@ export default function Admin() {
               </div>
               <button
                 onClick={handleDeleteBlock}
-                className="border border-[#ff2f2f] flex items-center px-5 py-2.5 rounded"
+                className="border border-[#ff2f2f] flex items-center justify-center px-5 py-2.5 rounded self-start lg:self-auto"
               >
                 <p className="font-medium text-[#ff2f2f] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                   刪除區塊
@@ -289,9 +292,9 @@ export default function Admin() {
             </div>
 
             {/* Action Bar */}
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2.5 items-center">
-                <div className="bg-[#eaeaea] flex gap-2.5 items-center p-2.5 rounded-[7px] w-[190px]">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col gap-3 lg:flex-row lg:gap-2.5 lg:items-center">
+                <div className="bg-[#eaeaea] flex gap-2.5 items-center p-2.5 rounded-[7px] w-full lg:w-[190px]">
                   <IconSearch size={20} className="text-gray-600" />
                   <input
                     type="text"
@@ -301,46 +304,48 @@ export default function Admin() {
                     className="bg-transparent outline-none flex-1 text-sm"
                   />
                 </div>
-                <button
-                  onClick={handleBatchDelete}
-                  disabled={selectedCards.size === 0}
-                  className={`border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded ${
-                    selectedCards.size === 0 ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  <p className="font-medium text-[#161616] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
-                    刪除卡片
-                  </p>
-                </button>
-                <button
-                  onClick={() => handleBatchVisibility(true)}
-                  disabled={selectedCards.size === 0}
-                  className={`border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded ${
-                    selectedCards.size === 0 ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  <p className="font-medium text-[#161616] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
-                    顯示
-                  </p>
-                </button>
-                <button
-                  onClick={() => handleBatchVisibility(false)}
-                  disabled={selectedCards.size === 0}
-                  className={`border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded ${
-                    selectedCards.size === 0 ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  <p className="font-medium text-[#161616] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
-                    隱藏
-                  </p>
-                </button>
+                <div className="flex flex-wrap gap-2.5">
+                  <button
+                    onClick={handleBatchDelete}
+                    disabled={selectedCards.size === 0}
+                    className={`border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded ${
+                      selectedCards.size === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <p className="font-medium text-[#161616] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                      刪除卡片
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => handleBatchVisibility(true)}
+                    disabled={selectedCards.size === 0}
+                    className={`border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded ${
+                      selectedCards.size === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <p className="font-medium text-[#161616] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                      顯示
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => handleBatchVisibility(false)}
+                    disabled={selectedCards.size === 0}
+                    className={`border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded ${
+                      selectedCards.size === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <p className="font-medium text-[#161616] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                      隱藏
+                    </p>
+                  </button>
+                </div>
               </div>
               <button
                 onClick={() => {
                   setEditingCard(null);
                   setShowCardForm(true);
                 }}
-                className="bg-[#339cfd] flex gap-2 items-center px-5 py-2.5 rounded"
+                className="bg-[#339cfd] flex gap-2 items-center justify-center px-5 py-2.5 rounded w-full lg:w-auto"
               >
                 <IconAdd size={16} className="text-white" />
                 <p className="font-medium text-[14px] text-white" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
@@ -349,8 +354,71 @@ export default function Admin() {
               </button>
             </div>
 
-            {/* Data Table */}
-            <div className="bg-[#f7f7f7] flex flex-col gap-4 p-5 rounded-[10px]">
+            {/* Mobile Card List */}
+            <div className="flex flex-col gap-3 lg:hidden">
+              {filteredCards.length === 0 ? (
+                <div className="bg-[#f7f7f7] rounded-[10px] p-5 text-center text-gray-500">沒有卡片資料</div>
+              ) : (
+                filteredCards.map((card) => {
+                  const isVisible = card.visible !== false;
+                  return (
+                    <div
+                      key={card.id}
+                      className="bg-[#f7f7f7] rounded-[14px] p-4 flex flex-col gap-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedCards.has(card.id)}
+                            onChange={() => toggleCardSelection(card.id)}
+                            className="mt-1 size-5 cursor-pointer"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[18px] text-black break-words" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                              {card.title}
+                            </p>
+                            <p className="mt-1 text-sm text-[#838383]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                              {isVisible ? '顯示中' : '已隱藏'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setEditingCard(card);
+                            setShowCardForm(true);
+                          }}
+                          className="border border-[#5a5a5a] rounded px-3 py-1.5 text-sm"
+                        >
+                          編輯
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="rounded bg-white p-3">
+                          <p className="text-[#838383] mb-1">建立者</p>
+                          <p>User 01</p>
+                        </div>
+                        <div className="rounded bg-white p-3">
+                          <p className="text-[#838383] mb-1">狀態</p>
+                          <p>{isVisible ? '顯示' : '隱藏'}</p>
+                        </div>
+                        <div className="rounded bg-white p-3">
+                          <p className="text-[#838383] mb-1">建立日期</p>
+                          <p>{card.createdAt ? new Date(card.createdAt).toLocaleDateString('zh-TW') : '2022.6.10'}</p>
+                        </div>
+                        <div className="rounded bg-white p-3">
+                          <p className="text-[#838383] mb-1">最後更新</p>
+                          <p>{card.updatedAt ? new Date(card.updatedAt).toLocaleDateString('zh-TW') : '2022.6.10'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden lg:flex bg-[#f7f7f7] flex-col gap-4 p-5 rounded-[10px]">
               {/* Table Header */}
               <div className="flex items-center px-3.5">
                 <div className="flex items-center justify-center w-[30px]">
@@ -390,12 +458,12 @@ export default function Admin() {
 
               {/* Table Rows */}
               <div className="flex flex-col gap-2">
-                {getFilteredCards().length === 0 ? (
+                {filteredCards.length === 0 ? (
                   <div className="bg-white flex items-center justify-center px-3.5 py-5 rounded-[5px]">
                     <p className="text-gray-500">沒有卡片資料</p>
                   </div>
                 ) : (
-                  getFilteredCards().map((card) => {
+                  filteredCards.map((card) => {
                     const isVisible = card.visible !== false;
                     return (
                       <div
@@ -638,7 +706,7 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
   return (
     <div className="bg-white fixed inset-0 z-50 overflow-y-auto">
       {/* Sidebar */}
-      <div className="fixed bg-[#f2f2f2] h-screen flex flex-col gap-12 items-center px-[40px] py-[50px] w-[294px] left-0 top-0">
+      <div className="hidden lg:flex fixed bg-[#f2f2f2] h-screen flex-col gap-12 items-center px-[40px] py-[50px] w-[294px] left-0 top-0">
         <p className="font-bold text-[28px] text-black w-full" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
           資料管理系統
         </p>
@@ -688,21 +756,21 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
       </div>
 
       {/* Main Content */}
-      <div className="ml-[294px] flex flex-col gap-5 px-[93px] py-12">
+      <div className="flex flex-col gap-5 px-5 py-6 lg:ml-[294px] lg:px-[93px] lg:py-12">
         {/* Header */}
-        <div className="flex items-end justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-1.5">
             <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
               資料呈現區
             </p>
-            <p className="font-bold text-[28px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+            <p className="font-bold text-[22px] lg:text-[28px] text-black" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
               {currentBlock?.title || '未命名區塊'} / {existingCard ? existingCard.title : '新增卡片'}
             </p>
           </div>
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="bg-white border border-[#5a5a5a] flex items-center px-5 py-2.5 rounded"
+              className="bg-white border border-[#5a5a5a] flex-1 lg:flex-none items-center justify-center px-5 py-2.5 rounded"
             >
               <p className="font-medium text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                 取消
@@ -710,7 +778,7 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
             </button>
             <button
               onClick={handleSave}
-              className="bg-[#339cfd] flex items-center px-5 py-2.5 rounded"
+              className="bg-[#339cfd] flex-1 lg:flex-none items-center justify-center px-5 py-2.5 rounded"
             >
               <p className="font-medium text-[16px] text-white" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                 儲存
@@ -720,9 +788,9 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
         </div>
 
         {/* Content */}
-        <div className="flex gap-5">
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-5">
           {/* Left Panel */}
-          <div className="flex flex-col gap-5 w-[601px]">
+          <div className="flex flex-col gap-5 w-full lg:w-[601px]">
             {/* Image Upload */}
             <div className="flex flex-col gap-3">
               <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
@@ -751,8 +819,8 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
 
             {/* Image List */}
             {images.map((image, idx) => (
-              <div key={idx} className="border border-[#d9d9d9] flex gap-6 p-3.5 rounded-[10px]">
-                <div className="relative bg-[#d9d9d9] h-[100px] w-[160px] rounded-[10px] flex items-center justify-center overflow-hidden">
+              <div key={idx} className="border border-[#d9d9d9] flex flex-col gap-4 p-3.5 rounded-[10px] sm:flex-row sm:gap-6">
+                <div className="relative bg-[#d9d9d9] h-[180px] w-full sm:h-[100px] sm:w-[160px] rounded-[10px] flex items-center justify-center overflow-hidden">
                   {image.url ? (
                     <img
                       src={resolveImageUrl(image.url)}
@@ -818,7 +886,7 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
           </div>
 
           {/* Right Panel */}
-          <div className="flex flex-col gap-5 w-[356px]">
+          <div className="flex flex-col gap-5 w-full lg:w-[356px]">
             {/* Preview */}
             <div className="flex flex-col gap-3">
               <p className="font-semibold text-[#838383] text-[16px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
@@ -832,7 +900,7 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
                         <img
                           src={resolveImageUrl(images[currentImageIndex].url)}
                           alt="預覽"
-                          className="w-full h-[202px] object-cover bg-[#d9d9d9]"
+                          className="w-full h-[220px] sm:h-[260px] lg:h-[202px] object-cover bg-[#d9d9d9]"
                         />
                         {images.length > 1 && (
                           <>
@@ -934,7 +1002,7 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
                 </p>
                 <button
                   onClick={handleDeleteCard}
-                  className="border border-[#ff2f2f] flex items-center px-5 py-2.5 rounded w-fit"
+                  className="border border-[#ff2f2f] flex items-center justify-center px-5 py-2.5 rounded w-full sm:w-fit"
                 >
                   <p className="font-medium text-[#ff2f2f] text-[14px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                     刪除卡片
