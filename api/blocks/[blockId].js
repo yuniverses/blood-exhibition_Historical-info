@@ -1,7 +1,7 @@
 import { supabase } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
-  const { id } = req.query;
+  const { blockId: id } = req.query;
 
   if (req.method === 'GET') {
     const { data, error } = await supabase
