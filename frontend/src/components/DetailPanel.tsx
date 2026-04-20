@@ -12,6 +12,7 @@ interface DetailPanelProps {
 export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClose, initialRect }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isWideLayout, setIsWideLayout] = useState(true);
+  const [isCompactWideLayout, setIsCompactWideLayout] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [startY, setStartY] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
@@ -33,6 +34,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
     const handleResize = () => {
       const aspectRatio = window.innerWidth / window.innerHeight;
       setIsWideLayout(aspectRatio > 1.0);
+      setIsCompactWideLayout(aspectRatio > 1.0 && window.innerWidth < 1500);
     };
 
     handleResize();
@@ -336,7 +338,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
           ref={imageContainerRef}
           className={`absolute ${
             isWideLayout
-              ? 'left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2'
+              ? 'left-1/2 top-[34%] -translate-x-1/2 -translate-y-1/2'
               : 'left-1/2 top-[32%] -translate-x-1/2 -translate-y-1/2'
           } cursor-grab active:cursor-grabbing invisible`}
           onMouseDown={(e) => handleDragStart(e.clientY)}
@@ -349,7 +351,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
           onWheel={handleWheel} // Add wheel listener
         >
           <div className="relative" style={{
-            width: isWideLayout ? 'min(50vw, 668px)' : 'min(65vw, 459px)',
+            width: isWideLayout ? (isCompactWideLayout ? 'min(52vw, 700px)' : 'min(56vw, 760px)') : 'min(65vw, 459px)',
             height: isWideLayout ? 'min(60vh, 573px)' : 'min(50vh, 394px)',
             perspective: '1200px'
           }}>
@@ -358,7 +360,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
                 key={index}
                 style={{
                   ...getImageStyle(index),
-                  width: isWideLayout ? 'min(33vw, 445px)' : 'min(55vw, 306px)',
+                  width: isWideLayout ? (isCompactWideLayout ? 'min(34vw, 460px)' : 'min(36vw, 520px)') : 'min(55vw, 306px)',
                   height: isWideLayout ? 'min(40vh, 369px)' : 'min(36vh, 254px)',
                 }}
                 className="rounded-lg overflow-hidden"
@@ -399,107 +401,158 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
           ref={textContainerRef}
           className={`absolute flex flex-col ${
             isWideLayout
-              ? 'left-[30%] top-[68%] w-[26%]'
-              : 'left-[6%] right-[6%] bottom-[18%] w-[63%]'
-          } ${!isWideLayout ? 'gap-[10px]' : ''} invisible`}
+              ? (isCompactWideLayout
+                ? 'left-1/2 top-[59%] -translate-x-1/2'
+                : 'left-1/2 top-[60%] -translate-x-1/2')
+              : 'left-1/2 top-[59%] w-[min(84vw,360px)] -translate-x-1/2'
+          } ${!isWideLayout ? 'gap-3' : ''} invisible`}
         >
-          <h2
-            className={`font-bold text-white leading-normal ${
-              isWideLayout ? 'text-[clamp(1rem,1.6vw,1.414rem)] mb-4' : 'text-[1rem] shrink-0'
-            }`}
-            style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
-          >
-            {card.title}
-          </h2>
-          <div
-            className={`text-white leading-[1.65] overflow-y-auto pr-4 custom-scrollbar ${
-              isWideLayout ? 'text-[clamp(0.6875rem,1vw,0.829rem)] max-h-[18vh]' : 'text-[0.6rem] max-h-[21vh]'
-            }`}
-            style={{ fontFamily: "'Noto Sans TC', sans-serif", fontWeight: 500 }}
-          >
-            {card.description?.split('\n').map((paragraph, index) => (
-              <p key={index} className="mb-3">
-                {paragraph}
-              </p>
-            ))}
-          </div>
+          {isWideLayout ? (
+            <div className="mx-auto flex w-fit items-start justify-start gap-4">
+              <div className={isCompactWideLayout ? 'w-[min(44vw,520px)]' : 'w-[min(38vw,520px)]'}>
+                <h2
+                  className={`font-bold text-white ${
+                    isCompactWideLayout
+                      ? 'mb-4 text-[clamp(1.05rem,1.7vw,1.65rem)] leading-[1.28]'
+                      : 'mb-4 text-[clamp(1.15rem,1.95vw,1.95rem)] leading-[1.3]'
+                  }`}
+                  style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                >
+                  {card.title}
+                </h2>
+                <div
+                  className={`text-white leading-[1.65] overflow-y-auto pr-4 custom-scrollbar ${
+                    isCompactWideLayout
+                      ? 'max-h-[13vh] text-[clamp(0.78rem,0.88vw,0.94rem)]'
+                      : 'max-h-[15vh] text-[clamp(0.82rem,0.95vw,1rem)]'
+                  }`}
+                  style={{ fontFamily: "'Noto Sans TC', sans-serif", fontWeight: 500 }}
+                >
+                  {card.description?.split('\n').map((paragraph, index) => (
+                    <p key={index} className="mb-3">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                ref={captionContainerRef}
+                className="flex flex-shrink-0 items-start gap-3 pt-2"
+              >
+                <div className="flex flex-col gap-1">
+                  <div className="relative">
+                    <p
+                      className="text-[1rem] font-bold text-white"
+                      style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                    >
+                      {String(currentImageIndex + 1).padStart(2, '0')}
+                    </p>
+                    <div className="absolute bottom-[-4px] left-0 w-[39px] h-0 border-b border-white" />
+                  </div>
+                  <p
+                    className="text-[1rem] font-bold text-[#515151]"
+                    style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                  >
+                    {String(images.length).padStart(2, '0')}
+                  </p>
+                </div>
+
+                <div className={`${isCompactWideLayout ? 'w-[72px]' : 'w-[84px]'} text-right`}>
+                  <p
+                    className="mt-[2px] text-[0.8rem] font-medium leading-[1.5] text-white/80"
+                    style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                  >
+                    {images[currentImageIndex].caption || ''}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="mx-auto flex w-full max-w-[340px] items-start justify-center gap-4">
+                <div className="w-[min(64vw,240px)]">
+                  <h2
+                    className="text-[1rem] font-bold text-white leading-normal"
+                    style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                  >
+                    {card.title}
+                  </h2>
+                  <div
+                    className="mt-4 text-[0.72rem] max-h-[18vh] text-white leading-[1.65] overflow-y-auto pr-2 custom-scrollbar"
+                    style={{ fontFamily: "'Noto Sans TC', sans-serif", fontWeight: 500 }}
+                  >
+                    {card.description?.split('\n').map((paragraph, index) => (
+                      <p key={index} className="mb-3">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  ref={captionContainerRef}
+                  className="flex w-[52px] flex-shrink-0 flex-col items-end pt-1"
+                >
+                  <div className="relative">
+                    <p
+                      className="text-[1rem] font-bold text-white"
+                      style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                    >
+                      {String(currentImageIndex + 1).padStart(2, '0')}
+                    </p>
+                    <div className="absolute bottom-[-4px] right-0 w-[39px] h-[1px] bg-white" />
+                  </div>
+                  <p
+                    className="mt-2 text-[1rem] font-bold text-[#515151]"
+                    style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                  >
+                    {String(images.length).padStart(2, '0')}
+                  </p>
+                  <p
+                    className="mt-4 text-right text-[0.68rem] font-medium leading-[1.45] text-white/80"
+                    style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                  >
+                    {images[currentImageIndex].caption || ''}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Captions */}
-        {isWideLayout ? (
-          <div
-            ref={captionContainerRef}
-            className="absolute left-[64%] top-[65%] z-20 flex items-start gap-4 invisible"
-          >
-            <div className="w-[104px] text-right flex-shrink-0">
-              <p className="text-white font-medium text-[0.875rem] mt-[2px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
-                {images[currentImageIndex].caption || ''}
-              </p>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="relative">
-                <p
-                  className="text-[1rem] font-bold text-white"
-                  style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
-                >
-                  {String(currentImageIndex + 1).padStart(2, '0')}
-                </p>
-                <div className="absolute bottom-[-4px] left-0 w-[39px] h-0 border-b border-white" />
-              </div>
-              <p
-                className="text-[1rem] font-bold text-[#515151]"
-                style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
-              >
-                {String(images.length).padStart(2, '0')}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div
-            ref={captionContainerRef}
-            className="absolute right-[10%] top-[56%] z-20 flex items-start gap-3 invisible"
-          >
-            <div className="w-[80px] text-right flex-shrink-0">
-              <p className="text-white font-medium text-[0.875rem] mt-[2px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
-                {images[currentImageIndex].caption || ''}
-              </p>
-            </div>
-            <div className="flex flex-col gap-1 items-end">
-              <div className="relative">
-                <p
-                  className="text-[1rem] font-bold text-white"
-                  style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
-                >
-                  {String(currentImageIndex + 1).padStart(2, '0')}
-                </p>
-                <div className="absolute bottom-[-4px] left-0 w-[39px] h-[1px] bg-white" />
-              </div>
-              <p
-                className="text-[1rem] font-bold text-[#515151]"
-                style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
-              >
-                {String(images.length).padStart(2, '0')}
-              </p>
-            </div>
-          </div>
-        )}
+        {!isWideLayout && null}
       </div>
 
       <button
         ref={closeButtonRef}
         onClick={onClose}
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 w-[85px] h-[40px] flex items-center justify-center invisible"
+        className={`absolute bottom-10 left-1/2 z-20 flex -translate-x-1/2 items-center justify-center invisible ${
+          isWideLayout
+            ? 'h-[44px] rounded-full border border-white/40 bg-black/25 px-6 backdrop-blur-sm hover:bg-white/10'
+            : 'h-[40px] w-[85px]'
+        }`}
       >
-        <div className="w-full h-full rotate-90 flex items-center justify-center">
-          <div className="border-[0.5px] border-white rounded-[58px] px-[10px] py-[22px] backdrop-blur-sm bg-transparent hover:bg-white/10 transition-colors flex items-center justify-center">
-            <span
-              className="text-white text-[14px] font-bold whitespace-nowrap -rotate-90 block w-[41px] text-center leading-none"
-              style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
-            >
-              關閉
-            </span>
+        {isWideLayout ? (
+          <span
+            className="text-white text-[13px] font-bold tracking-[0.18em]"
+            style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+          >
+            關閉
+          </span>
+        ) : (
+          <div className="w-full h-full rotate-90 flex items-center justify-center">
+            <div className="border-[0.5px] border-white rounded-[58px] px-[10px] py-[22px] backdrop-blur-sm bg-transparent hover:bg-white/10 transition-colors flex items-center justify-center">
+              <span
+                className="text-white text-[14px] font-bold whitespace-nowrap -rotate-90 block w-[41px] text-center leading-none"
+                style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+              >
+                關閉
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </button>
 
       <style>
