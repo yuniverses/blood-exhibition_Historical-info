@@ -265,6 +265,39 @@ npm run build
 2. 設定後端 API 伺服器
 3. 更新前端的 API_URL 設定指向生產環境的後端地址
 
+### Vercel 部署注意事項
+
+目前線上環境使用 Vercel 部署，圖片儲存使用 Supabase Storage。Vercel 會依照連接的 GitHub repository 與 Production Branch 自動建立部署。
+
+本專案目前常見的 remote 有兩個：
+
+```bash
+origin       https://github.com/yuniverses/blood-exhibition_Historical-info.git
+kaochingchan https://github.com/kaochingchan/bloodexhibitionhistorical-info.git
+```
+
+Vercel 專案 `bloodexhibitionhistorical-info-fw5c` 目前應確認連接的是 `kaochingchan/bloodexhibitionhistorical-info` 的 `main` branch。若只推到 `origin/main`，Vercel 可能不會看到新的 commit。
+
+部署最新 commit 時，請推送到 Vercel 連接的 remote：
+
+```bash
+git status
+git log --oneline -3
+git push kaochingchan main
+```
+
+推送成功後，Vercel 的 Deployments 頁面應該會出現新的 Production Deployment，commit hash 會對應剛推送的最新 commit。
+
+可用以下指令確認 GitHub 上的 `kaochingchan/main` 是否已經更新：
+
+```bash
+git ls-remote kaochingchan refs/heads/main
+```
+
+注意：不要直接對舊的 Deployment 按 `Redeploy` 來部署新 commit。`Redeploy` 通常只是重新建置該筆舊 Deployment 對應的舊 commit。若要部署新 commit，應該先 push 到 Vercel 連接的 Git branch，或在 Vercel Dashboard 的 Deployments 頁面使用 `Create Deployment` 並指定新的 commit SHA 或 `main` branch。
+
+圖片上傳在 Vercel 上有 request body 大小限制。前端已改為上傳前轉成 WebP 並逐張呼叫 `/api/upload`，避免多張圖片合併成單一 request 造成 `413`。
+
 ## 開發說明
 
 - 前端使用 TypeScript strict mode，確保類型安全

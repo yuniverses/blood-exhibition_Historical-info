@@ -22,6 +22,8 @@ const waveKeyframes = `
 
 const SNAP_EASE = 0.22;
 const SNAP_TRANSITION = 'transform 0.18s ease-out';
+const WHEEL_SNAP_COOLDOWN = 420;
+const WHEEL_DELTA_THRESHOLD = 18;
 
 // Inject keyframes into document head
 if (typeof document !== 'undefined') {
@@ -63,6 +65,7 @@ export default function EnhancedGallery({
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const wheelTimeoutRef = useRef<number | null>(null);
+  const wheelDeltaRef = useRef(0);
   const dragStartIndexRef = useRef(0);
   const dragStartScrollRef = useRef(0);
 
@@ -197,6 +200,47 @@ export default function EnhancedGallery({
     };
   }, [scrollEase]);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      if (!enableScroll) return;
+      e.preventDefault();
+
+      if (wheelTimeoutRef.current) return;
+
+      const axisDelta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      const normalizedDelta = e.deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? axisDelta * 16
+        : e.deltaMode === WheelEvent.DOM_DELTA_PAGE
+          ? axisDelta * window.innerHeight
+          : axisDelta;
+
+      wheelDeltaRef.current += normalizedDelta;
+
+      if (Math.abs(wheelDeltaRef.current) < WHEEL_DELTA_THRESHOLD) return;
+
+      const currentIndex = getNearestIndexFromScroll(targetScrollRef.current);
+      const isHorizontalGesture = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+      const isNext = isHorizontalGesture ? wheelDeltaRef.current < 0 : wheelDeltaRef.current > 0;
+
+      scrollToIndex(currentIndex + (isNext ? 1 : -1));
+      wheelDeltaRef.current = 0;
+
+      wheelTimeoutRef.current = window.setTimeout(() => {
+        wheelTimeoutRef.current = null;
+        wheelDeltaRef.current = 0;
+      }, WHEEL_SNAP_COOLDOWN);
+    };
+
+    container.addEventListener('wheel', handleNativeWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', handleNativeWheel);
+    };
+  }, [enableScroll, cardWidth, cardBaseWidth, windowWidth]);
+
   // 初始化滾動位置，讓第一張卡片居中
   useEffect(() => {
     // 讓索引 0 的卡片居中
@@ -232,10 +276,10 @@ export default function EnhancedGallery({
     if (!isDragging || !enableScroll) return;
     const diff = (startX - clientX) * (scrollSpeed * 0.5);
     const direction = diff > 0 ? 1 : -1;
-    const steps = Math.floor(Math.abs(diff) / snapThreshold);
-    const nextIndex = dragStartIndexRef.current + direction * steps;
+    const hasPassedThreshold = Math.abs(diff) >= snapThreshold;
+    const nextIndex = dragStartIndexRef.current + direction;
 
-    if (steps === 0) {
+    if (!hasPassedThreshold) {
       targetScrollRef.current = dragStartScrollRef.current;
       setTargetScroll(dragStartScrollRef.current);
       return;
@@ -250,34 +294,6 @@ export default function EnhancedGallery({
     setIsDragging(false);
     // 滑動結束後吸附到最近的卡片
     snapToNearestCard();
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    if (!enableScroll) return;
-    e.preventDefault();
-
-    if (wheelTimeoutRef.current) return; // Simple cooldown
-
-    // 優先使用水平滾動 (deltaX)，如果沒有則使用垂直滾動 (deltaY)
-    // 這樣觸控板左右滑動和滑鼠滾輪都能使用
-    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    const currentIndex = getNearestIndexFromScroll(targetScrollRef.current);
-
-    if (Math.abs(delta) > 10) {
-       // 滑動方向與觸控螢幕一致：向左滑 = 下一張，向右滑 = 上一張
-       // deltaX < 0 = 向左滑, deltaY > 0 = 向下滾 = 下一張
-       const isNext = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? delta < 0 : delta > 0;
-       if (isNext) {
-         scrollToIndex(currentIndex + 1);
-       } else {
-         scrollToIndex(currentIndex - 1);
-       }
-
-       // Set a cooldown
-       wheelTimeoutRef.current = window.setTimeout(() => {
-         wheelTimeoutRef.current = null;
-       }, 260);
-    }
   };
 
   // 計算弧形位置
@@ -411,7 +427,6 @@ export default function EnhancedGallery({
       onTouchStart={(e) => handleStart(e.touches[0].clientX)}
       onTouchMove={(e) => handleMove(e.touches[0].clientX)}
       onTouchEnd={handleEnd}
-      onWheel={handleWheel}
       style={{ cursor: enableScroll ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
     >
       {/* Cards Container - Background Layer with Images */}
