@@ -639,12 +639,16 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
     try {
       const fileArray = Array.from(files);
       const result = await api.uploadMultipleImages(fileArray);
-      setImages([...images, ...result.images.map(img => ({ url: img.url, caption: '' }))]);
+      setImages((currentImages) => [
+        ...currentImages,
+        ...result.images.map((img) => ({ url: img.url, caption: '' })),
+      ]);
     } catch (err) {
       console.error('上傳失敗:', err);
       alert('上傳失敗');
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -941,18 +945,19 @@ function CardForm({ blockId, existingCard, onClose, onSuccess }: CardFormProps) 
                     ) : (
                       <div className="w-full h-[202px] bg-[#d9d9d9]" />
                     )}
-                    {images[currentImageIndex]?.caption && (
-                      <p className="font-medium text-[#292c33] text-[10px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
-                        {images[currentImageIndex].caption}
-                      </p>
-                    )}
+                    <p
+                      className="min-h-[18px] font-medium text-[#292c33] text-[10px]"
+                      style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
+                    >
+                      {images[currentImageIndex]?.caption || ''}
+                    </p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <p className="font-bold text-[#292c33] text-[19px]" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
                       {title || '標題'}
                     </p>
-                    <p className="font-medium text-[#292c33] text-[12px] line-clamp-3" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
-                      {description || '說明文字'}
+                    <p className="min-h-[54px] font-medium text-[#292c33] text-[12px] line-clamp-3" style={{ fontFamily: "'Noto Sans TC', sans-serif" }}>
+                      {description}
                     </p>
                   </div>
                 </div>

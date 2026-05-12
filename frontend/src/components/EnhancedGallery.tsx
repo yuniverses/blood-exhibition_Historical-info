@@ -20,6 +20,9 @@ const waveKeyframes = `
 }
 `;
 
+const SNAP_EASE = 0.22;
+const SNAP_TRANSITION = 'transform 0.18s ease-out';
+
 // Inject keyframes into document head
 if (typeof document !== 'undefined') {
   const styleId = 'enhanced-gallery-wave-styles';
@@ -57,10 +60,11 @@ export default function EnhancedGallery({
   const [targetScroll, setTargetScroll] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
-  const [startScroll, setStartScroll] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const wheelTimeoutRef = useRef<number | null>(null);
+  const dragStartIndexRef = useRef(0);
+  const dragStartScrollRef = useRef(0);
 
   // 使用 ref 來存儲最新的 scroll 值，避免閉包問題
   const currentScrollRef = useRef(0);
@@ -84,6 +88,8 @@ export default function EnhancedGallery({
   const cardBaseWidth = Math.min(375, windowWidth * 0.65);
   const cardWidth = cardBaseWidth + (windowWidth < 768 ? 20 : 100); // Smaller gap on mobile
   const enableScroll = items.length >= 3;
+  const centeringAdjustment = windowWidth / 2 - cardBaseWidth / 2;
+  const snapThreshold = Math.max(60, Math.min(120, cardWidth * 0.28));
 
 
   // Handle items transition
@@ -131,20 +137,16 @@ export default function EnhancedGallery({
   };
 
   // 吸附到最近的卡片位置
+  const getNearestIndexFromScroll = (scroll: number) => {
+    return Math.round((scroll + centeringAdjustment) / cardWidth);
+  };
+
   const snapToNearestCard = () => {
     if (!enableScroll || items.length < 3) return;
-
-    // Current centered card index
-    // We want to center the CARD (cardBaseWidth), not the unit (cardWidth)
-    
-    const centerOffset = windowWidth / 2 - cardBaseWidth / 2;
-    const nearestCardIndex = Math.round((currentScrollRef.current + centerOffset) / cardWidth);
-
-    scrollToIndex(nearestCardIndex);
+    scrollToIndex(getNearestIndexFromScroll(targetScrollRef.current));
   };
 
   const scrollToIndex = (index: number) => {
-    const centeringAdjustment = windowWidth / 2 - cardBaseWidth / 2;
     const targetPosition = index * cardWidth - centeringAdjustment;
     targetScrollRef.current = targetPosition;
     setTargetScroll(targetPosition);
@@ -156,8 +158,7 @@ export default function EnhancedGallery({
     if (items.length === 1) return 0;
     if (items.length === 2) return 0;
 
-    const centerScroll = currentScroll + windowWidth / 2 - cardWidth / 2;
-    const rawIndex = Math.round(centerScroll / cardWidth);
+    const rawIndex = getNearestIndexFromScroll(currentScroll);
     return ((rawIndex % items.length) + items.length) % items.length;
   };
 
@@ -173,8 +174,8 @@ export default function EnhancedGallery({
     const animate = () => {
       // 平滑插值
       const diff = targetScrollRef.current - currentScrollRef.current;
-      if (Math.abs(diff) > 0.01) {
-        currentScrollRef.current += diff * scrollEase;
+      if (Math.abs(diff) > 0.5) {
+        currentScrollRef.current += diff * Math.max(scrollEase, SNAP_EASE);
       } else {
         currentScrollRef.current = targetScrollRef.current;
       }
@@ -223,15 +224,26 @@ export default function EnhancedGallery({
     if (!enableScroll) return;
     setIsDragging(true);
     setStartX(clientX);
-    setStartScroll(targetScroll);
+    dragStartScrollRef.current = targetScrollRef.current;
+    dragStartIndexRef.current = getNearestIndexFromScroll(targetScrollRef.current);
   };
 
   const handleMove = (clientX: number) => {
     if (!isDragging || !enableScroll) return;
     const diff = (startX - clientX) * (scrollSpeed * 0.5);
-    const newTarget = startScroll + diff;
-    targetScrollRef.current = newTarget;
-    setTargetScroll(newTarget);
+    const direction = diff > 0 ? 1 : -1;
+    const steps = Math.floor(Math.abs(diff) / snapThreshold);
+    const nextIndex = dragStartIndexRef.current + direction * steps;
+
+    if (steps === 0) {
+      targetScrollRef.current = dragStartScrollRef.current;
+      setTargetScroll(dragStartScrollRef.current);
+      return;
+    }
+
+    if (getNearestIndexFromScroll(targetScrollRef.current) !== nextIndex) {
+      scrollToIndex(nextIndex);
+    }
   };
 
   const handleEnd = () => {
@@ -249,8 +261,7 @@ export default function EnhancedGallery({
     // 優先使用水平滾動 (deltaX)，如果沒有則使用垂直滾動 (deltaY)
     // 這樣觸控板左右滑動和滑鼠滾輪都能使用
     const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    const centeringAdjustment = windowWidth / 2 - cardBaseWidth / 2;
-    const currentIndex = Math.round((targetScrollRef.current + centeringAdjustment) / cardWidth);
+    const currentIndex = getNearestIndexFromScroll(targetScrollRef.current);
 
     if (Math.abs(delta) > 10) {
        // 滑動方向與觸控螢幕一致：向左滑 = 下一張，向右滑 = 上一張
@@ -265,7 +276,7 @@ export default function EnhancedGallery({
        // Set a cooldown
        wheelTimeoutRef.current = window.setTimeout(() => {
          wheelTimeoutRef.current = null;
-       }, 500);
+       }, 260);
     }
   };
 
@@ -318,7 +329,7 @@ export default function EnhancedGallery({
 
     return {
       transform: `translate(${offset}px, ${arcY}px) rotateZ(${rotation}deg) scale(${scale})`,
-      transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+      transition: SNAP_TRANSITION,
       zIndex: Math.abs(normalizedOffset) < 0.5 ? 10 : 5,
     };
   };
@@ -333,8 +344,7 @@ export default function EnhancedGallery({
     }
 
     // 對於 3 張以上，計算視窗中心的卡片索引
-    const centerScroll = currentScroll + windowWidth / 2 - cardWidth / 2;
-    const centerCardIndex = Math.round(centerScroll / cardWidth);
+    const centerCardIndex = getNearestIndexFromScroll(currentScroll);
 
     // 渲染中心卡片 ± 4 張（共 9 張卡片）
     const visibleIndices: number[] = [];
@@ -372,7 +382,7 @@ export default function EnhancedGallery({
       filter: distanceFromCenter > 0.1
         ? `blur(${blurAmount}px) brightness(${brightness}) saturate(${saturate})`
         : 'none',
-      transition: isDragging ? 'filter 0.1s ease-out' : 'filter 0.3s ease-out',
+      transition: isDragging ? 'filter 0.12s ease-out' : 'filter 0.2s ease-out',
     };
 
     // 如果啟用波浪效果，添加波浪動畫（保持一致的柔和效果）

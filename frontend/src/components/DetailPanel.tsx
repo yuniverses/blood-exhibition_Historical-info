@@ -29,6 +29,9 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
   const images = card?.images && card.images.length > 0
     ? card.images
     : card ? [{ url: card.image, caption: card.imageCaption }] : [];
+  const descriptionParagraphs = card?.description
+    ? card.description.split('\n')
+    : [''];
 
   useEffect(() => {
     const handleResize = () => {
@@ -423,12 +426,12 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
                 <div
                   className={`text-white leading-[1.65] overflow-y-auto pr-4 custom-scrollbar ${
                     isCompactWideLayout
-                      ? 'max-h-[13vh] text-[clamp(0.78rem,0.88vw,0.94rem)]'
-                      : 'max-h-[15vh] text-[clamp(0.82rem,0.95vw,1rem)]'
+                      ? 'min-h-[72px] max-h-[13vh] text-[clamp(0.78rem,0.88vw,0.94rem)]'
+                      : 'min-h-[88px] max-h-[15vh] text-[clamp(0.82rem,0.95vw,1rem)]'
                   }`}
                   style={{ fontFamily: "'Noto Sans TC', sans-serif", fontWeight: 500 }}
                 >
-                  {card.description?.split('\n').map((paragraph, index) => (
+                  {descriptionParagraphs.map((paragraph, index) => (
                     <p key={index} className="mb-3">
                       {paragraph}
                     </p>
@@ -460,7 +463,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
 
                 <div className={`${isCompactWideLayout ? 'w-[72px]' : 'w-[84px]'} text-right`}>
                   <p
-                    className="mt-[2px] text-[0.8rem] font-medium leading-[1.5] text-white/80"
+                    className="mt-[2px] min-h-[58px] text-[0.8rem] font-medium leading-[1.5] text-white/80"
                     style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
                   >
                     {images[currentImageIndex].caption || ''}
@@ -479,10 +482,10 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
                     {card.title}
                   </h2>
                   <div
-                    className="mt-4 text-[0.72rem] max-h-[18vh] text-white leading-[1.65] overflow-y-auto pr-2 custom-scrollbar"
+                    className="mt-4 min-h-[78px] max-h-[18vh] text-[0.72rem] text-white leading-[1.65] overflow-y-auto pr-2 custom-scrollbar"
                     style={{ fontFamily: "'Noto Sans TC', sans-serif", fontWeight: 500 }}
                   >
-                    {card.description?.split('\n').map((paragraph, index) => (
+                    {descriptionParagraphs.map((paragraph, index) => (
                       <p key={index} className="mb-3">
                         {paragraph}
                       </p>
@@ -510,7 +513,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ card, isVisible, onClo
                     {String(images.length).padStart(2, '0')}
                   </p>
                   <p
-                    className="mt-4 text-right text-[0.68rem] font-medium leading-[1.45] text-white/80"
+                    className="mt-4 min-h-[50px] text-right text-[0.68rem] font-medium leading-[1.45] text-white/80"
                     style={{ fontFamily: "'Noto Sans TC', sans-serif" }}
                   >
                     {images[currentImageIndex].caption || ''}

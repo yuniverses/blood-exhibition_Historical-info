@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://bloodexhibitionhistorical-info-fw5c.vercel.app',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
     },
